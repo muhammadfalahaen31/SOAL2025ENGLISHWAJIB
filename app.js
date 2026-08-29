@@ -1,50 +1,52 @@
-// ==========================================================================
-// MPI TKA BAHASA INGGRIS SMA 2025 (WAJIB) — APPLICATION LOGIC
-// Standalone, Mobile-First, Touch-Optimized Interactive Learning Engine
-// Developer: Muhammad Falahaen Jiddan, M.Pd. Gr. — SMA Plus PGRI Cibinong
-// ==========================================================================
+// ==========================================
+// LATIHAN TKA BAHASA INGGRIS SMA 2026 - NARRATIVE TEXT
+// APPLICATION LOGIC ENGINE (app.js)
+// 100% Offline, Touch-Safe, SafeStorage Enabled
+// ==========================================
 
-// Safe Storage Wrapper (Anti-Crash in file:// and Sandboxed Webviews)
+const APP_STORAGE_KEY = 'tka_english_2026_narrative_main';
+const THEME_KEY = 'tka_english_2026_theme';
+
+// SafeStorage Wrapper
 window._memoryStorage = window._memoryStorage || {};
-const safeStorage = {
-  getItem: function(key) {
+const SafeStorage = {
+  getItem(key) {
     try {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        return window.localStorage.getItem(key);
+      if (typeof localStorage !== 'undefined') {
+        const val = localStorage.getItem(key);
+        if (val !== null) return val;
       }
     } catch (e) {
-      console.warn('LocalStorage access blocked, using memory fallback:', e);
+      console.warn('LocalStorage read blocked; using in-memory store', e);
     }
     return window._memoryStorage[key] || null;
   },
-  setItem: function(key, val) {
+  setItem(key, val) {
     try {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        window.localStorage.setItem(key, val);
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(key, val);
       }
     } catch (e) {
-      console.warn('LocalStorage write blocked, using memory fallback:', e);
+      console.warn('LocalStorage write blocked; saving in-memory', e);
     }
     window._memoryStorage[key] = String(val);
   },
-  removeItem: function(key) {
+  removeItem(key) {
     try {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        window.localStorage.removeItem(key);
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem(key);
       }
     } catch (e) {
-      console.warn('LocalStorage remove blocked, using memory fallback:', e);
+      console.warn('LocalStorage remove blocked', e);
     }
     delete window._memoryStorage[key];
   }
 };
+window.SafeStorage = SafeStorage;
 
-const STORAGE_KEY_APP = 'mpi_tka_english_2025_state';
-const STORAGE_KEY_THEME = 'mpi_tka_theme';
-
-// Application Central State
+// Application State
 const AppState = {
-  currentView: 'dashboard', // 'dashboard', 'worksheet', 'vocab', 'strategy', 'results'
+  currentView: 'dashboard', // 'dashboard', 'workspace', 'vocab_lab', 'tka_strategy', 'final_review'
   selectedTextId: 1,
   currentQuestionIndex: 0,
 
@@ -56,66 +58,38 @@ const AppState = {
     teacher: 'Muhammad Falahaen Jiddan, M.Pd. Gr.'
   },
 
-  // Answers & Reasonings: { [questionId]: { answer: any, reason: string, timestamp: number } }
+  // Answers & Reasons
   answers: {},
+  evaluations: {},
 
-  // Self-Assessment ratings: { [questionId]: 'correct' | 'incorrect' }
-  selfAssessment: {},
+  // Mobile Switcher
+  mobileActiveTab: 'read',
 
-  // Mobile Workspace Tab Switcher: 'read' | 'quiz'
-  mobileWorksheetTab: 'quiz',
-
-  // Typography & Reading Settings
-  fontSize: 'md', // 'sm', 'md', 'lg'
-  fontFamily: 'serif', // 'serif', 'sans'
+  // Typography
+  fontSizeLevel: 0,
+  fontFamily: 'serif',
   theme: 'light',
 
-  // Vocab Lab State
-  vocabFilter: 'all', // 'all', '1', '2', '3', '4'
-  vocabActivity: 'flipcard', // 'flipcard', 'match', 'context', 'table'
-  flipIndex: 0,
-  isFlipped: false,
-  matchState: {
-    selectedLeft: null,
-    selectedRight: null,
-    matchedPairs: [],
-    score: 0,
-    cardsLeft: [],
-    cardsRight: []
-  },
-  contextState: {
-    currentIndex: 0,
-    score: 0,
-    answered: false,
-    questions: []
-  },
-
-  // Speech TTS State
-  speechRate: 1.0,
-  isSpeaking: false
+  // Vocab Lab state
+  vocabFilter: 'all',
+  vocabActivity: 'flipcard',
+  matchingState: { selectedLeft: null, selectedRight: null, matchedPairs: [] },
+  contextQuizState: { currentIndex: 0, score: 0, answered: false },
+  vocabSearchQuery: ''
 };
 
-// ==========================================================================
-// INITIALIZATION & DOM READY
-// ==========================================================================
+// ==========================================
+// INITIALIZATION
+// ==========================================
 function initApp() {
   loadTheme();
-  loadSavedData();
-  setupEventListeners();
-  renderAllViews();
+  loadData();
+  setupEvents();
+  renderApp();
 }
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initApp);
-} else {
-  initApp();
-}
-
-// ==========================================================================
-// PERSISTENCE & THEME
-// ==========================================================================
 function loadTheme() {
-  const savedTheme = safeStorage.getItem(STORAGE_KEY_THEME) || 'light';
+  const savedTheme = SafeStorage.getItem(THEME_KEY) || 'light';
   AppState.theme = savedTheme;
   applyTheme(savedTheme);
 }
@@ -123,7 +97,7 @@ function loadTheme() {
 function toggleTheme() {
   const newTheme = AppState.theme === 'light' ? 'dark' : 'light';
   AppState.theme = newTheme;
-  safeStorage.setItem(STORAGE_KEY_THEME, newTheme);
+  SafeStorage.setItem(THEME_KEY, newTheme);
   applyTheme(newTheme);
 }
 
@@ -134,35 +108,31 @@ function applyTheme(theme) {
   if (themeIcon && themeLabel) {
     if (theme === 'dark') {
       themeIcon.textContent = '☀️';
-      themeLabel.textContent = 'Light Mode';
+      themeLabel.textContent = 'Light';
     } else {
       themeIcon.textContent = '🌙';
-      themeLabel.textContent = 'Dark Mode';
+      themeLabel.textContent = 'Dark';
     }
   }
 }
 
-function loadSavedData() {
+function loadData() {
   try {
-    const raw = safeStorage.getItem(STORAGE_KEY_APP);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (parsed.profile) AppState.profile = { ...AppState.profile, ...parsed.profile };
+    const saved = SafeStorage.getItem(APP_STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed.profile) AppState.profile = Object.assign(AppState.profile, parsed.profile);
       if (parsed.answers) AppState.answers = parsed.answers;
-      if (parsed.selfAssessment) AppState.selfAssessment = parsed.selfAssessment;
-      if (parsed.currentQuestionIndex !== undefined) AppState.currentQuestionIndex = parsed.currentQuestionIndex;
-      if (parsed.selectedTextId !== undefined) AppState.selectedTextId = parsed.selectedTextId;
+      if (parsed.evaluations) AppState.evaluations = parsed.evaluations;
     }
   } catch (e) {
-    console.error('Error loading saved data:', e);
+    console.error('Failed to load app data', e);
   }
 
-  // Populate profile inputs
-  const nameInp = document.getElementById('input-student-name');
-  const classInp = document.getElementById('input-student-class');
-  const schoolInp = document.getElementById('input-student-school');
-  const teacherInp = document.getElementById('input-student-teacher');
-
+  const nameInp = document.getElementById('input-app-name');
+  const classInp = document.getElementById('input-app-class');
+  const schoolInp = document.getElementById('input-app-school');
+  const teacherInp = document.getElementById('input-app-teacher');
   if (nameInp && AppState.profile.name) nameInp.value = AppState.profile.name;
   if (classInp && AppState.profile.class) classInp.value = AppState.profile.class;
   if (schoolInp && AppState.profile.school) schoolInp.value = AppState.profile.school;
@@ -174,1222 +144,1435 @@ function saveData() {
     const payload = {
       profile: AppState.profile,
       answers: AppState.answers,
-      selfAssessment: AppState.selfAssessment,
-      currentQuestionIndex: AppState.currentQuestionIndex,
-      selectedTextId: AppState.selectedTextId
+      evaluations: AppState.evaluations
     };
-    safeStorage.setItem(STORAGE_KEY_APP, JSON.stringify(payload));
+    SafeStorage.setItem(APP_STORAGE_KEY, JSON.stringify(payload));
   } catch (e) {
-    console.error('Error saving data:', e);
+    console.error('Failed to save app data', e);
   }
+}
+
+function saveAppProfile() {
+  const nameInp = document.getElementById('input-app-name');
+  const classInp = document.getElementById('input-app-class');
+  const schoolInp = document.getElementById('input-app-school');
+  const teacherInp = document.getElementById('input-app-teacher');
+  if (nameInp) AppState.profile.name = nameInp.value.trim();
+  if (classInp) AppState.profile.class = classInp.value.trim();
+  if (schoolInp) AppState.profile.school = schoolInp.value.trim();
+  if (teacherInp) AppState.profile.teacher = teacherInp.value.trim();
+  saveData();
   updateDashboardStats();
 }
 
-function setupEventListeners() {
-  const nameInp = document.getElementById('input-student-name');
-  const classInp = document.getElementById('input-student-class');
-  const schoolInp = document.getElementById('input-student-school');
-
-  if (nameInp) {
-    nameInp.addEventListener('input', (e) => {
-      AppState.profile.name = e.target.value;
-      saveData();
-    });
-  }
-  if (classInp) {
-    classInp.addEventListener('input', (e) => {
-      AppState.profile.class = e.target.value;
-      saveData();
-    });
-  }
-  if (schoolInp) {
-    schoolInp.addEventListener('input', (e) => {
-      AppState.profile.school = e.target.value;
-      saveData();
-    });
-  }
-}
-
-// ==========================================================================
-// VIEW NAVIGATION
-// ==========================================================================
-function setView(viewId) {
-  AppState.currentView = viewId;
-  stopSpeech();
-
-  // Update view sections
-  const viewSections = document.querySelectorAll('.view-section');
-  viewSections.forEach(sec => sec.classList.remove('active'));
-
-  const targetView = document.getElementById(`view-${viewId}`);
-  if (targetView) targetView.classList.add('active');
-
-  // Update bottom navigation bar
-  const navItems = document.querySelectorAll('.bottom-nav-item');
-  navItems.forEach(item => {
-    if (item.getAttribute('data-view') === viewId) {
-      item.classList.add('active');
-    } else {
-      item.classList.remove('active');
-    }
-  });
-
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-
-  // View specific refreshes
-  if (viewId === 'dashboard') {
-    updateDashboardStats();
-    renderDashboardPassages();
-  } else if (viewId === 'worksheet') {
-    renderWorksheet();
-  } else if (viewId === 'vocab') {
-    renderVocabLab();
-  } else if (viewId === 'strategy') {
-    renderStrategyGuide();
-  } else if (viewId === 'results') {
-    renderResults();
-  }
-}
-
-function renderAllViews() {
-  updateDashboardStats();
-  renderDashboardPassages();
-  renderWorksheet();
-  renderVocabLab();
-  renderStrategyGuide();
-  setView(AppState.currentView);
-}
-
-// ==========================================================================
-// MODUL 1: DASHBOARD
-// ==========================================================================
-function updateDashboardStats() {
-  const totalQ = TKA_DATA.questions.length;
-  let answeredCount = 0;
-  let reasonsCount = 0;
-
-  TKA_DATA.questions.forEach(q => {
-    const userEntry = AppState.answers[q.id];
-    if (userEntry) {
-      if (userEntry.answer !== undefined && userEntry.answer !== null && userEntry.answer !== '') {
-        if (Array.isArray(userEntry.answer) ? userEntry.answer.length > 0 : true) {
-          answeredCount++;
-        }
-      }
-      if (userEntry.reason && userEntry.reason.trim().length > 0) {
-        reasonsCount++;
-      }
-    }
-  });
-
-  const answeredEl = document.getElementById('dash-stat-answered');
-  const reasonsEl = document.getElementById('dash-stat-reasons');
-  const percentEl = document.getElementById('dash-stat-progress');
-
-  if (answeredEl) answeredEl.textContent = `${answeredCount}/${totalQ}`;
-  if (reasonsEl) reasonsEl.textContent = `${reasonsCount}/${totalQ}`;
-  if (percentEl) {
-    const pct = Math.round((answeredCount / totalQ) * 100);
-    percentEl.textContent = `${pct}%`;
-  }
-}
-
-function renderDashboardPassages() {
-  const container = document.getElementById('dashboard-passages-list');
+function showToast(message, type = 'info') {
+  const container = document.getElementById('toast-container');
   if (!container) return;
-
-  container.innerHTML = TKA_DATA.texts.map(text => {
-    // Calculate progress for this text
-    const textQuestions = TKA_DATA.questions.filter(q => q.textId === text.id);
-    let answered = 0;
-    textQuestions.forEach(q => {
-      const entry = AppState.answers[q.id];
-      if (entry && entry.answer) {
-        if (Array.isArray(entry.answer) ? entry.answer.length > 0 : true) answered++;
-      }
-    });
-    const pct = Math.round((answered / textQuestions.length) * 100);
-
-    return `
-      <div class="passage-card">
-        <div class="passage-card-top">
-          <span class="passage-genre-badge">${text.genre}</span>
-          <h3 class="passage-card-title">${text.title}</h3>
-          <p class="passage-card-range">${text.questionRange} (${textQuestions.length} Questions)</p>
-        </div>
-        <div class="passage-progress-wrapper">
-          <div class="passage-progress-text">
-            <span>Progress</span>
-            <span>${answered}/${textQuestions.length} Completed (${pct}%)</span>
-          </div>
-          <div class="passage-progress-bar-bg">
-            <div class="passage-progress-fill" style="width: ${pct}%"></div>
-          </div>
-        </div>
-        <button class="btn-open-worksheet" onclick="openWorksheetForText(${text.id})">
-          <span>Open Worksheet</span> ➔
-        </button>
-      </div>
-    `;
-  }).join('');
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.innerHTML = message;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(12px)';
+    setTimeout(() => toast.remove(), 300);
+  }, 2800);
 }
 
-function openWorksheetForText(textId) {
-  AppState.selectedTextId = textId;
-  const firstQIndex = TKA_DATA.questions.findIndex(q => q.textId === textId);
-  if (firstQIndex !== -1) {
-    AppState.currentQuestionIndex = firstQIndex;
-  }
-  setView('worksheet');
-}
-
-// ==========================================================================
-// MODUL 2: WORKSHEET & STUDENT REASONING (HOTS)
-// ==========================================================================
-function setMobileWorksheetTab(tabName) {
-  AppState.mobileWorksheetTab = tabName;
-  const wsContainer = document.getElementById('worksheet-split-area');
-  if (wsContainer) {
-    wsContainer.setAttribute('data-mobile-tab', tabName);
-  }
-
-  const btnRead = document.getElementById('btn-seg-read');
-  const btnQuiz = document.getElementById('btn-seg-quiz');
-
-  if (btnRead && btnQuiz) {
-    if (tabName === 'read') {
-      btnRead.classList.add('active');
-      btnQuiz.classList.remove('active');
-    } else {
-      btnQuiz.classList.add('active');
-      btnRead.classList.remove('active');
+// ==========================================
+// AUDIO SYNTHESIS & TTS
+// ==========================================
+function playTone(type) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    if (type === 'success') {
+      osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+      osc.frequency.setValueAtTime(880.00, ctx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.12, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.35);
+    } else if (type === 'error') {
+      osc.frequency.setValueAtTime(220.00, ctx.currentTime);
+      osc.frequency.setValueAtTime(196.00, ctx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.12, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.3);
     }
+  } catch (e) {
+    // Ignore audio error
   }
 }
 
-function renderWorksheet() {
-  renderQuestionPills();
-  renderCurrentPassage();
-  renderCurrentQuestion();
-  setMobileWorksheetTab(AppState.mobileWorksheetTab);
-}
-
-function renderQuestionPills() {
-  const pillsContainer = document.getElementById('question-pills-bar');
-  if (!pillsContainer) return;
-
-  pillsContainer.innerHTML = TKA_DATA.questions.map((q, idx) => {
-    const isActive = idx === AppState.currentQuestionIndex;
-    const entry = AppState.answers[q.id];
-    let isAnswered = false;
-    if (entry && entry.answer) {
-      if (q.format === 'categorization') {
-        const itemKeys = Object.keys(entry.answer);
-        if (itemKeys.length === q.items.length) isAnswered = true;
-      } else if (Array.isArray(entry.answer)) {
-        if (entry.answer.length > 0) isAnswered = true;
-      } else {
-        isAnswered = true;
-      }
-    }
-
-    const classes = ['q-pill'];
-    if (isActive) classes.push('active');
-    if (isAnswered) classes.push('answered');
-
-    return `
-      <button class="${classes.join(' ')}" onclick="selectQuestionIndex(${idx})">
-        ${q.number}
-      </button>
-    `;
-  }).join('');
-}
-
-function selectQuestionIndex(idx) {
-  if (idx < 0 || idx >= TKA_DATA.questions.length) return;
-  AppState.currentQuestionIndex = idx;
-  const q = TKA_DATA.questions[idx];
-  AppState.selectedTextId = q.textId;
-  saveData();
-  renderWorksheet();
-}
-
-function renderCurrentPassage() {
-  const text = TKA_DATA.texts.find(t => t.id === AppState.selectedTextId) || TKA_DATA.texts[0];
-  const titleEl = document.getElementById('reading-text-title');
-  const citationEl = document.getElementById('reading-text-citation');
-  const bodyEl = document.getElementById('reading-passage-body');
-
-  if (titleEl) titleEl.textContent = text.title;
-  if (citationEl) citationEl.textContent = `${text.genre} — ${text.sourceCitation}`;
-
-  if (bodyEl) {
-    bodyEl.className = `passage-content font-${AppState.fontFamily} size-${AppState.fontSize}`;
-    bodyEl.innerHTML = text.paragraphs.map((p, pIdx) => `
-      <div class="passage-paragraph">
-        <span class="p-number-badge">¶ P${pIdx + 1}</span>
-        <p class="p-text">${p}</p>
-      </div>
-    `).join('');
-  }
-}
-
-function setFontSize(size) {
-  AppState.fontSize = size;
-  renderCurrentPassage();
-}
-
-function setFontFamily(family) {
-  AppState.fontFamily = family;
-  renderCurrentPassage();
-}
-
-function renderCurrentQuestion() {
-  const q = TKA_DATA.questions[AppState.currentQuestionIndex];
-  if (!q) return;
-
-  const numTitleEl = document.getElementById('q-number-display');
-  const indTagEl = document.getElementById('q-indicator-display');
-  const bodyTextEl = document.getElementById('q-body-display');
-  const optionsContainer = document.getElementById('q-options-container');
-  const reasonInput = document.getElementById('q-student-reason');
-  const charCounter = document.getElementById('q-reason-char-count');
-
-  if (numTitleEl) numTitleEl.textContent = `Question ${q.number} of ${TKA_DATA.questions.length}`;
-  if (indTagEl) indTagEl.textContent = q.type;
-  if (bodyTextEl) bodyTextEl.textContent = q.question;
-
-  const entry = AppState.answers[q.id] || { answer: null, reason: '' };
-
-  // Render reasoning textarea
-  if (reasonInput) {
-    reasonInput.value = entry.reason || '';
-    if (charCounter) charCounter.textContent = `${(entry.reason || '').length} chars`;
-  }
-
-  // Render options by format
-  if (optionsContainer) {
-    if (q.format === 'multiple_choice') {
-      optionsContainer.innerHTML = `
-        <div class="options-list">
-          ${q.options.map(opt => {
-            const isSelected = entry.answer === opt.key;
-            return `
-              <div class="option-item ${isSelected ? 'selected' : ''}" onclick="selectOption('${opt.key}')">
-                <div class="opt-indicator">${opt.key}</div>
-                <div class="opt-text">${opt.text}</div>
-              </div>
-            `;
-          }).join('')}
-        </div>
-      `;
-    } else if (q.format === 'multi_select') {
-      const selectedKeys = Array.isArray(entry.answer) ? entry.answer : [];
-      optionsContainer.innerHTML = `
-        <div class="options-list">
-          ${q.options.map(opt => {
-            const isSelected = selectedKeys.includes(opt.key);
-            return `
-              <div class="option-item ${isSelected ? 'selected' : ''}" onclick="toggleMultiOption('${opt.key}')">
-                <div class="opt-indicator">${isSelected ? '✓' : opt.key}</div>
-                <div class="opt-text">${opt.text}</div>
-              </div>
-            `;
-          }).join('')}
-        </div>
-      `;
-    } else if (q.format === 'categorization') {
-      const currentCatAnswers = (typeof entry.answer === 'object' && entry.answer !== null) ? entry.answer : {};
-      optionsContainer.innerHTML = `
-        <div class="categorization-container">
-          ${q.items.map(item => {
-            const chosenCat = currentCatAnswers[item.id] || null;
-            return `
-              <div class="category-row">
-                <div class="cat-statement">📌 "${item.statement}"</div>
-                <div class="cat-choices">
-                  ${q.categories.map(cat => `
-                    <button class="cat-choice-btn ${chosenCat === cat ? 'selected' : ''}" onclick="selectCategory('${item.id}', '${cat}')">
-                      ${chosenCat === cat ? '✓ ' : ''}${cat}
-                    </button>
-                  `).join('')}
-                </div>
-              </div>
-            `;
-          }).join('')}
-        </div>
-      `;
-    }
-  }
-
-  // Update Footer buttons
-  const prevBtn = document.getElementById('btn-q-prev');
-  const nextBtn = document.getElementById('btn-q-next');
-  if (prevBtn) prevBtn.style.visibility = AppState.currentQuestionIndex === 0 ? 'hidden' : 'visible';
-  if (nextBtn) {
-    if (AppState.currentQuestionIndex === TKA_DATA.questions.length - 1) {
-      nextBtn.innerHTML = '<span>View Answer Sheet</span> 📊';
-      nextBtn.onclick = () => setView('results');
-    } else {
-      nextBtn.innerHTML = '<span>Next Question</span> ➔';
-      nextBtn.onclick = () => selectQuestionIndex(AppState.currentQuestionIndex + 1);
-    }
-  }
-}
-
-function selectOption(key) {
-  const q = TKA_DATA.questions[AppState.currentQuestionIndex];
-  if (!AppState.answers[q.id]) {
-    AppState.answers[q.id] = { answer: null, reason: '', timestamp: Date.now() };
-  }
-  AppState.answers[q.id].answer = key;
-  AppState.answers[q.id].timestamp = Date.now();
-  saveData();
-  renderWorksheet();
-}
-
-function toggleMultiOption(key) {
-  const q = TKA_DATA.questions[AppState.currentQuestionIndex];
-  if (!AppState.answers[q.id]) {
-    AppState.answers[q.id] = { answer: [], reason: '', timestamp: Date.now() };
-  }
-  let arr = Array.isArray(AppState.answers[q.id].answer) ? [...AppState.answers[q.id].answer] : [];
-  if (arr.includes(key)) {
-    arr = arr.filter(k => k !== key);
-  } else {
-    arr.push(key);
-  }
-  AppState.answers[q.id].answer = arr.sort();
-  AppState.answers[q.id].timestamp = Date.now();
-  saveData();
-  renderWorksheet();
-}
-
-function selectCategory(itemId, categoryName) {
-  const q = TKA_DATA.questions[AppState.currentQuestionIndex];
-  if (!AppState.answers[q.id]) {
-    AppState.answers[q.id] = { answer: {}, reason: '', timestamp: Date.now() };
-  }
-  const currentObj = (typeof AppState.answers[q.id].answer === 'object' && AppState.answers[q.id].answer !== null)
-    ? { ...AppState.answers[q.id].answer }
-    : {};
-
-  currentObj[itemId] = categoryName;
-  AppState.answers[q.id].answer = currentObj;
-  AppState.answers[q.id].timestamp = Date.now();
-  saveData();
-  renderWorksheet();
-}
-
-function onReasonInput(e) {
-  const q = TKA_DATA.questions[AppState.currentQuestionIndex];
-  if (!AppState.answers[q.id]) {
-    AppState.answers[q.id] = { answer: null, reason: '', timestamp: Date.now() };
-  }
-  AppState.answers[q.id].reason = e.target.value;
-  AppState.answers[q.id].timestamp = Date.now();
-
-  const charCounter = document.getElementById('q-reason-char-count');
-  if (charCounter) charCounter.textContent = `${e.target.value.length} chars`;
-
-  saveData();
-}
-
-// "👀 Peek Passage" Bottom Sheet
-function openPeekPassage() {
-  const text = TKA_DATA.texts.find(t => t.id === AppState.selectedTextId) || TKA_DATA.texts[0];
-  const titleEl = document.getElementById('peek-sheet-title');
-  const bodyEl = document.getElementById('peek-sheet-body');
-  const overlay = document.getElementById('peek-sheet-overlay');
-
-  if (titleEl) titleEl.textContent = `📖 ${text.title}`;
-  if (bodyEl) {
-    bodyEl.innerHTML = text.paragraphs.map((p, pIdx) => `
-      <div class="passage-paragraph" style="margin-bottom: 12px;">
-        <span class="p-number-badge">¶ P${pIdx + 1}</span>
-        <p class="p-text">${p}</p>
-      </div>
-    `).join('');
-  }
-  if (overlay) overlay.classList.add('active');
-}
-
-function closePeekPassage() {
-  const overlay = document.getElementById('peek-sheet-overlay');
-  if (overlay) overlay.classList.remove('active');
-}
-
-// Web Speech TTS Reader
-function speakPassage() {
+function speakText(text, lang = 'en-US') {
   if (!('speechSynthesis' in window)) {
-    showToast('Speech synthesis not supported in this browser.');
+    showToast('Web Speech Audio is not supported in this browser.', 'error');
     return;
   }
-
-  stopSpeech();
-  const text = TKA_DATA.texts.find(t => t.id === AppState.selectedTextId) || TKA_DATA.texts[0];
-  const fullText = text.paragraphs.join(' ');
-  const utterance = new SpeechSynthesisUtterance(fullText);
-  utterance.lang = 'en-US';
-  utterance.rate = AppState.speechRate;
-
-  utterance.onstart = () => {
-    AppState.isSpeaking = true;
-    updateTTSControls();
-  };
-  utterance.onend = () => {
-    AppState.isSpeaking = false;
-    updateTTSControls();
-  };
-  utterance.onerror = () => {
-    AppState.isSpeaking = false;
-    updateTTSControls();
-  };
-
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = lang;
+  utterance.rate = 0.92;
   window.speechSynthesis.speak(utterance);
+  showToast('🔊 Playing audio reading...', 'info');
 }
 
-function stopSpeech() {
+function stopSpeaking() {
   if ('speechSynthesis' in window) {
     window.speechSynthesis.cancel();
-    AppState.isSpeaking = false;
-    updateTTSControls();
-  }
-}
-
-function updateTTSControls() {
-  const playBtn = document.getElementById('btn-tts-play');
-  const statusEl = document.getElementById('tts-status-text');
-  if (playBtn && statusEl) {
-    if (AppState.isSpeaking) {
-      playBtn.textContent = '⏹ Stop Audio';
-      playBtn.onclick = stopSpeech;
-      statusEl.textContent = '🔊 Reading passage...';
-    } else {
-      playBtn.textContent = '🔊 Play Passage';
-      playBtn.onclick = speakPassage;
-      statusEl.textContent = 'TTS Audio Reader';
-    }
+    showToast('⏹ Audio stopped.', 'info');
   }
 }
 
 function speakWord(word) {
-  if (!('speechSynthesis' in window)) return;
-  window.speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(word);
-  utterance.lang = 'en-US';
-  utterance.rate = 0.9;
-  window.speechSynthesis.speak(utterance);
+  speakText(word, 'en-US');
 }
 
-// ==========================================================================
-// MODUL 3: VOCABULARY / CONCEPT LAB (4 INTERACTIVE MODES)
-// ==========================================================================
-function getFilteredVocabList() {
-  let list = [];
-  if (AppState.vocabFilter === 'all') {
-    TKA_DATA.texts.forEach(t => { list = list.concat(t.vocabulary); });
-  } else {
-    const textId = parseInt(AppState.vocabFilter);
-    const text = TKA_DATA.texts.find(t => t.id === textId);
-    if (text) list = [...text.vocabulary];
+// ==========================================
+// VIEW ROUTING
+// ==========================================
+function setView(viewName) {
+  AppState.currentView = viewName;
+  document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
+
+  const target = document.getElementById(`view-${viewName}`);
+  if (target) target.classList.add('active');
+
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.classList.toggle('active', item.dataset.view === viewName);
+  });
+
+  document.querySelectorAll('.bottom-nav-item').forEach(item => {
+    item.classList.toggle('active', item.dataset.view === viewName);
+  });
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  if (viewName === 'dashboard') {
+    renderDashboard();
+  } else if (viewName === 'workspace') {
+    renderWorkspace();
+  } else if (viewName === 'vocab_lab') {
+    renderVocabLab();
+  } else if (viewName === 'tka_strategy') {
+    renderTKAStrategy();
+  } else if (viewName === 'final_review') {
+    renderFinalReview();
   }
-  return list;
 }
 
-function setVocabFilter(filterId) {
-  AppState.vocabFilter = filterId;
-  AppState.flipIndex = 0;
-  AppState.isFlipped = false;
-  renderVocabLab();
+function renderApp() {
+  setView(AppState.currentView);
 }
 
-function setVocabActivity(act) {
-  AppState.vocabActivity = act;
-  renderVocabLab();
+// ==========================================
+// MODUL 1: DASHBOARD
+// ==========================================
+function renderDashboard() {
+  updateDashboardStats();
+  renderTextCards();
 }
 
-function renderVocabLab() {
-  // Update filter pills active state
-  const pills = document.querySelectorAll('.filter-pill-btn');
-  pills.forEach(p => {
-    if (p.getAttribute('data-filter') === AppState.vocabFilter) {
-      p.classList.add('active');
-    } else {
-      p.classList.remove('active');
+function updateDashboardStats() {
+  const total = TKA_DATA.questions.length;
+  let answeredCount = 0;
+  let reasonedCount = 0;
+
+  TKA_DATA.questions.forEach(q => {
+    const rec = AppState.answers[q.id];
+    if (rec && rec.answer !== undefined && rec.answer !== null) {
+      answeredCount++;
+      if (rec.reason && rec.reason.trim().length > 0) reasonedCount++;
     }
   });
 
-  // Update activity tabs active state
-  const tabs = document.querySelectorAll('.vocab-mode-btn');
-  tabs.forEach(t => {
-    if (t.getAttribute('data-act') === AppState.vocabActivity) {
-      t.classList.add('active');
-    } else {
-      t.classList.remove('active');
-    }
-  });
+  const progressPct = total > 0 ? Math.round((answeredCount / total) * 100) : 0;
 
-  // Show only active mode container
-  const modes = ['flipcard', 'match', 'context', 'table'];
-  modes.forEach(m => {
-    const el = document.getElementById(`vocab-mode-${m}`);
-    if (el) el.style.display = m === AppState.vocabActivity ? 'block' : 'none';
-  });
+  const statAns = document.getElementById('dash-stat-answered');
+  const statRea = document.getElementById('dash-stat-reasoned');
+  const statPct = document.getElementById('dash-stat-progress');
 
-  if (AppState.vocabActivity === 'flipcard') renderFlipCards();
-  else if (AppState.vocabActivity === 'match') renderMatchGame();
-  else if (AppState.vocabActivity === 'context') renderContextQuiz();
-  else if (AppState.vocabActivity === 'table') renderVocabTable();
+  if (statAns) statAns.textContent = `${answeredCount}/${total}`;
+  if (statRea) statRea.textContent = `${reasonedCount}/${total}`;
+  if (statPct) statPct.textContent = `${progressPct}%`;
 }
 
-// Mode 1: 3D Flip Card
-function renderFlipCards() {
-  const list = getFilteredVocabList();
-  const cardEl = document.getElementById('flipcard-item');
-  const countEl = document.getElementById('flipcard-counter');
-
-  if (!list.length || !cardEl) return;
-  if (AppState.flipIndex >= list.length) AppState.flipIndex = 0;
-
-  const v = list[AppState.flipIndex];
-  if (countEl) countEl.textContent = `Card ${AppState.flipIndex + 1} of ${list.length}`;
-
-  cardEl.classList.toggle('flipped', AppState.isFlipped);
-  cardEl.innerHTML = `
-    <div class="flipcard-front">
-      <div class="flip-badge-row">
-        <span class="flip-pos-badge">${v.pos}</span>
-        <button class="tool-btn" onclick="event.stopPropagation(); speakWord('${v.word.replace(/'/g, "\\'")}')">🔊 Audio</button>
-      </div>
-      <div style="text-align: center; margin: auto 0;">
-        <h2 class="flip-word-title">${v.word}</h2>
-        <p class="flip-phonetic">${v.pronunciation || ''}</p>
-      </div>
-      <p class="flip-hint-bottom">👆 Tap to see Indonesian meaning</p>
-    </div>
-    <div class="flipcard-back">
-      <div class="flip-badge-row">
-        <span class="flip-pos-badge">${v.pos}</span>
-        <button class="tool-btn" style="background: rgba(255,255,255,0.2); color: white;" onclick="event.stopPropagation(); speakWord('${v.word.replace(/'/g, "\\'")}')">🔊</button>
-      </div>
-      <div style="margin: auto 0;">
-        <h3 class="flip-meaning-id">${v.meaning}</h3>
-        <p class="flip-example">"${v.example || v.context}"</p>
-      </div>
-      <p class="flip-hint-bottom">👆 Tap to flip back</p>
-    </div>
-  `;
-}
-
-function flipCurrentCard() {
-  AppState.isFlipped = !AppState.isFlipped;
-  const cardEl = document.getElementById('flipcard-item');
-  if (cardEl) cardEl.classList.toggle('flipped', AppState.isFlipped);
-}
-
-function prevFlipCard() {
-  const list = getFilteredVocabList();
-  if (AppState.flipIndex > 0) {
-    AppState.flipIndex--;
-  } else {
-    AppState.flipIndex = list.length - 1;
-  }
-  AppState.isFlipped = false;
-  renderFlipCards();
-}
-
-function nextFlipCard() {
-  const list = getFilteredVocabList();
-  if (AppState.flipIndex < list.length - 1) {
-    AppState.flipIndex++;
-  } else {
-    AppState.flipIndex = 0;
-  }
-  AppState.isFlipped = false;
-  renderFlipCards();
-}
-
-function shuffleFlipCards() {
-  const list = getFilteredVocabList();
-  AppState.flipIndex = Math.floor(Math.random() * list.length);
-  AppState.isFlipped = false;
-  renderFlipCards();
-  showToast('Cards shuffled!');
-}
-
-// Mode 2: Match Words Game
-function renderMatchGame() {
-  const list = getFilteredVocabList();
-  if (!AppState.matchState.cardsLeft.length) {
-    resetMatchGame();
-    return;
-  }
-
-  const scoreEl = document.getElementById('match-game-score');
-  const leftCol = document.getElementById('match-col-left');
-  const rightCol = document.getElementById('match-col-right');
-
-  if (scoreEl) {
-    scoreEl.textContent = `Matched: ${AppState.matchState.matchedPairs.length} / ${AppState.matchState.cardsLeft.length}`;
-  }
-
-  if (leftCol && rightCol) {
-    leftCol.innerHTML = AppState.matchState.cardsLeft.map(item => {
-      const isMatched = AppState.matchState.matchedPairs.includes(item.id);
-      const isSelected = AppState.matchState.selectedLeft === item.id;
-      return `
-        <button class="match-card-btn ${isMatched ? 'matched' : ''} ${isSelected ? 'selected' : ''}" onclick="selectMatchCard('left', '${item.id}')">
-          ${item.word}
-        </button>
-      `;
-    }).join('');
-
-    rightCol.innerHTML = AppState.matchState.cardsRight.map(item => {
-      const isMatched = AppState.matchState.matchedPairs.includes(item.id);
-      const isSelected = AppState.matchState.selectedRight === item.id;
-      return `
-        <button class="match-card-btn ${isMatched ? 'matched' : ''} ${isSelected ? 'selected' : ''}" onclick="selectMatchCard('right', '${item.id}')">
-          ${item.meaning}
-        </button>
-      `;
-    }).join('');
-  }
-}
-
-function resetMatchGame() {
-  const list = getFilteredVocabList().slice(0, 6);
-  const items = list.map((v, i) => ({ id: `pair_${i}`, word: v.word, meaning: v.meaning }));
-
-  AppState.matchState = {
-    selectedLeft: null,
-    selectedRight: null,
-    matchedPairs: [],
-    score: 0,
-    cardsLeft: [...items].sort(() => Math.random() - 0.5),
-    cardsRight: [...items].sort(() => Math.random() - 0.5)
-  };
-  renderMatchGame();
-}
-
-function selectMatchCard(side, id) {
-  if (side === 'left') {
-    AppState.matchState.selectedLeft = id;
-  } else {
-    AppState.matchState.selectedRight = id;
-  }
-
-  if (AppState.matchState.selectedLeft && AppState.matchState.selectedRight) {
-    if (AppState.matchState.selectedLeft === AppState.matchState.selectedRight) {
-      AppState.matchState.matchedPairs.push(AppState.matchState.selectedLeft);
-      const matchedItem = AppState.matchState.cardsLeft.find(c => c.id === AppState.matchState.selectedLeft);
-      if (matchedItem) speakWord(matchedItem.word);
-      showToast('🎉 Correct Match!');
-    } else {
-      showToast('❌ Try again!');
-    }
-    AppState.matchState.selectedLeft = null;
-    AppState.matchState.selectedRight = null;
-  }
-
-  renderMatchGame();
-}
-
-// Mode 3: Context Quiz
-function renderContextQuiz() {
-  const list = getFilteredVocabList();
-  if (!AppState.contextState.questions.length || AppState.contextState.questions.length !== list.length) {
-    AppState.contextState.questions = list.map(v => {
-      const otherMeanings = list.filter(item => item.word !== v.word).map(item => item.meaning);
-      const shuffledOthers = otherMeanings.sort(() => Math.random() - 0.5).slice(0, 3);
-      const allChoices = [v.meaning, ...shuffledOthers].sort(() => Math.random() - 0.5);
-      return {
-        word: v.word,
-        pos: v.pos,
-        context: v.context || v.example,
-        correctMeaning: v.meaning,
-        choices: allChoices
-      };
-    });
-    AppState.contextState.currentIndex = 0;
-    AppState.contextState.score = 0;
-    AppState.contextState.answered = false;
-  }
-
-  const q = AppState.contextState.questions[AppState.contextState.currentIndex];
-  const container = document.getElementById('context-quiz-box');
-  if (!q || !container) return;
-
-  container.innerHTML = `
-    <div class="quiz-context-card">
-      <div class="q-header">
-        <span class="q-number-title">Challenge ${AppState.contextState.currentIndex + 1} of ${AppState.contextState.questions.length}</span>
-        <span class="q-indicator-tag">Score: ${AppState.contextState.score}</span>
-      </div>
-      <div style="font-size: 1.1rem; font-weight: 800; color: var(--academic-blue);">
-        "${q.word}" <span style="font-size: 0.85rem; color: var(--text-muted);">(${q.pos})</span>
-      </div>
-      <p style="font-style: italic; color: var(--text-secondary);">"${q.context}"</p>
-      <div style="font-weight: 700; margin-top: 4px;">What does this word mean in this context?</div>
-      <div class="options-list" id="context-quiz-choices">
-        ${q.choices.map(choice => `
-          <button class="quiz-opt-btn" onclick="answerContextQuiz(this, '${choice.replace(/'/g, "\\'")}', '${q.correctMeaning.replace(/'/g, "\\'")}')">
-            ${choice}
-          </button>
-        `).join('')}
-      </div>
-      <div id="context-quiz-footer" style="display: none; justify-content: flex-end; margin-top: 10px;">
-        <button class="btn-q-nav primary" onclick="nextContextQuiz()">Next Challenge ➔</button>
-      </div>
-    </div>
-  `;
-}
-
-function answerContextQuiz(btn, selectedChoice, correctMeaning) {
-  if (AppState.contextState.answered) return;
-  AppState.contextState.answered = true;
-
-  const choicesContainer = document.getElementById('context-quiz-choices');
-  const allBtns = choicesContainer.querySelectorAll('.quiz-opt-btn');
-
-  allBtns.forEach(b => {
-    b.disabled = true;
-    if (b.textContent.trim() === correctMeaning.trim()) {
-      b.classList.add('correct');
-    }
-  });
-
-  if (selectedChoice.trim() === correctMeaning.trim()) {
-    btn.classList.add('correct');
-    AppState.contextState.score++;
-    showToast('✨ Correct Answer!');
-  } else {
-    btn.classList.add('wrong');
-    showToast('❌ Incorrect!');
-  }
-
-  const footer = document.getElementById('context-quiz-footer');
-  if (footer) footer.style.display = 'flex';
-}
-
-function nextContextQuiz() {
-  AppState.contextState.answered = false;
-  if (AppState.contextState.currentIndex < AppState.contextState.questions.length - 1) {
-    AppState.contextState.currentIndex++;
-  } else {
-    AppState.contextState.currentIndex = 0;
-    showToast(`Quiz completed! Final Score: ${AppState.contextState.score} / ${AppState.contextState.questions.length}`);
-  }
-  renderContextQuiz();
-}
-
-// Mode 4: Word Master Table
-function renderVocabTable() {
-  const list = getFilteredVocabList();
-  const searchInp = document.getElementById('vocab-table-search');
-  const query = searchInp ? searchInp.value.toLowerCase().trim() : '';
-
-  const filtered = list.filter(v => 
-    v.word.toLowerCase().includes(query) ||
-    v.meaning.toLowerCase().includes(query) ||
-    v.pos.toLowerCase().includes(query)
-  );
-
-  const tbody = document.getElementById('vocab-table-body');
-  if (!tbody) return;
-
-  tbody.innerHTML = filtered.map(v => `
-    <tr>
-      <td>
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <strong style="color: var(--academic-blue); font-size: 1rem;">${v.word}</strong>
-          <button class="tool-btn" onclick="speakWord('${v.word.replace(/'/g, "\\'")}')">🔊</button>
-        </div>
-        <span style="font-size: 0.78rem; color: var(--text-muted);">${v.pronunciation || ''}</span>
-      </td>
-      <td><span class="flip-pos-badge">${v.pos}</span></td>
-      <td><strong>${v.meaning}</strong></td>
-      <td style="font-style: italic; color: var(--text-secondary); font-size: 0.85rem;">"${v.example || v.context}"</td>
-    </tr>
-  `).join('');
-}
-
-function filterVocabTable() {
-  renderVocabTable();
-}
-
-// ==========================================================================
-// MODUL 4: STRATEGY GUIDE (PANDUAN STRATEGI HOTS — 4 PILAR WAJIB)
-// ==========================================================================
-function renderStrategyGuide() {
-  const container = document.getElementById('strategy-accordion-list');
+function renderTextCards() {
+  const container = document.getElementById('dashboard-text-cards');
   if (!container) return;
 
-  container.innerHTML = TKA_DATA.strategies.map((strat, idx) => `
-    <div class="strategy-item-card" id="strat-card-${strat.id}">
-      <div class="strategy-header-toggle" onclick="toggleStrategyCard('${strat.id}')">
-        <div class="strategy-title-wrapper">
-          <span class="strategy-cat-badge">${strat.category}</span>
-          <h3 class="strategy-name">${strat.name}</h3>
+  let html = '';
+  TKA_DATA.texts.forEach(text => {
+    const textQuestions = TKA_DATA.questions.filter(q => q.textId === text.id);
+    let answered = 0;
+    textQuestions.forEach(q => {
+      if (AppState.answers[q.id] && AppState.answers[q.id].answer !== null) answered++;
+    });
+
+    const progressPct = textQuestions.length > 0 ? Math.round((answered / textQuestions.length) * 100) : 0;
+
+    html += `
+      <div class="text-card">
+        <div>
+          <div class="text-card-top">
+            <span class="badge badge-blue">${text.number}</span>
+            <span class="badge badge-amber">${text.questionRange}</span>
+          </div>
+          <h3 class="text-card-title">${text.title}</h3>
+          <p class="text-card-meta">${text.vocabulary.length} Vocabularies • ${textQuestions.length} TKA Questions</p>
+          
+          <div style="margin-top: 14px;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.82rem; font-weight: 700; color: var(--text-muted);">
+              <span>Completion Progress</span>
+              <span>${answered}/${textQuestions.length} (${progressPct}%)</span>
+            </div>
+            <div class="text-progress-bar-container">
+              <div class="text-progress-bar-fill" style="width: ${progressPct}%;"></div>
+            </div>
+          </div>
         </div>
-        <div class="strategy-chevron">▼</div>
+
+        <button class="btn btn-primary btn-sm" onclick="openWorkspace(${text.id})" style="width: 100%; margin-top: 8px;">
+          ✍️ Open Worksheet →
+        </button>
       </div>
-      <div class="strategy-body-content">
-        <!-- Pilar 1: Formula Emas -->
-        <div class="pilar-block pilar-formula">
-          <div class="pilar-title">⚡ Pilar 1: Formula Emas (Rumus Cepat)</div>
-          <div class="formula-text">${strat.formula}</div>
-        </div>
-
-        <!-- Pilar 2: Ciri Khas Pertanyaan -->
-        <div class="pilar-block pilar-pattern">
-          <div class="pilar-title">📌 Pilar 2: Ciri Khas Bentuk Pertanyaan Soal</div>
-          <div class="pattern-text">"${strat.quickQuestion}"</div>
-        </div>
-
-        <!-- Pilar 3: Langkah Sistematis -->
-        <div class="pilar-block pilar-steps">
-          <div class="pilar-title">📋 Pilar 3: Langkah Sistematis Menjawab</div>
-          <ol class="steps-list">
-            ${strat.steps.map(step => `<li>${step}</li>`).join('')}
-          </ol>
-        </div>
-
-        <!-- Pilar 4: Waspada Pengecoh -->
-        <div class="pilar-block pilar-trap">
-          <div class="pilar-title">⚠️ Pilar 4: Waspada Pengecoh (Distractor Trap Analysis)</div>
-          <div class="trap-text">${strat.trapWarning}</div>
-        </div>
-      </div>
-    </div>
-  `).join('');
-}
-
-function toggleStrategyCard(id) {
-  const card = document.getElementById(`strat-card-${id}`);
-  if (card) card.classList.toggle('expanded');
-}
-
-// ==========================================================================
-// MODUL 5: ANSWER SHEET, SELF-ASSESSMENT & PERFORMANCE ANALYTICS
-// ==========================================================================
-function evaluateAllAnswers() {
-  let correctCount = 0;
-  let incorrectCount = 0;
-  let pendingCount = 0;
-  let totalAssessed = 0;
-
-  const results = TKA_DATA.questions.map(q => {
-    const entry = AppState.answers[q.id] || { answer: null, reason: '' };
-    const selfStatus = AppState.selfAssessment ? (AppState.selfAssessment[q.id] || null) : null;
-    let isAnswered = false;
-
-    if (entry.answer !== null && entry.answer !== undefined && entry.answer !== '') {
-      if (q.format === 'multiple_choice') {
-        isAnswered = true;
-      } else if (q.format === 'multi_select') {
-        const studentArr = Array.isArray(entry.answer) ? entry.answer : [];
-        if (studentArr.length > 0) isAnswered = true;
-      } else if (q.format === 'categorization') {
-        const studentObj = (typeof entry.answer === 'object' && entry.answer !== null) ? entry.answer : {};
-        const studentKeys = Object.keys(studentObj);
-        if (studentKeys.length > 0) isAnswered = true;
-      }
-    }
-
-    if (selfStatus === 'correct') {
-      correctCount++;
-      totalAssessed++;
-    } else if (selfStatus === 'incorrect') {
-      incorrectCount++;
-      totalAssessed++;
-    } else {
-      pendingCount++;
-    }
-
-    return {
-      question: q,
-      studentEntry: entry,
-      isAnswered,
-      selfStatus
-    };
+    `;
   });
 
-  const totalQuestions = TKA_DATA.questions.length;
-  const score = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
-
-  return {
-    score,
-    correctCount,
-    incorrectCount,
-    pendingCount,
-    totalAssessed,
-    total: totalQuestions,
-    details: results
-  };
+  container.innerHTML = html;
 }
 
-function setSelfAssessment(qId, status) {
-  if (!AppState.selfAssessment) {
-    AppState.selfAssessment = {};
+// ==========================================
+// MODUL 2: WORKSHEET & REASONING
+// ==========================================
+function openWorkspace(textId, qIndex = 0) {
+  AppState.selectedTextId = textId;
+  AppState.currentQuestionIndex = qIndex;
+  setView('workspace');
+}
+
+function renderWorkspace() {
+  const text = TKA_DATA.texts.find(t => t.id === AppState.selectedTextId) || TKA_DATA.texts[0];
+  const textQuestions = TKA_DATA.questions.filter(q => q.textId === text.id);
+
+  if (AppState.currentQuestionIndex >= textQuestions.length) {
+    AppState.currentQuestionIndex = 0;
   }
 
-  if (AppState.selfAssessment[qId] === status) {
-    delete AppState.selfAssessment[qId];
-    showToast(`Question ${qId} self-assessment cleared.`);
-  } else {
-    AppState.selfAssessment[qId] = status;
-    if (status === 'correct') {
-      showToast(`Question ${qId} marked as Correct (✅)!`);
-    } else {
-      showToast(`Question ${qId} marked as Incorrect (❌)!`);
-    }
+  const titleEl = document.getElementById('ws-title');
+  if (titleEl) titleEl.textContent = `${text.number}: ${text.title}`;
+
+  renderReadingPassage(text);
+  renderQuestionPills(textQuestions);
+  renderQuestionCanvas(textQuestions[AppState.currentQuestionIndex]);
+  renderPeekContent(text);
+  updateMobileTabVisibility();
+}
+
+function renderReadingPassage(text) {
+  const readingTitle = document.getElementById('reading-title');
+  const readingCite = document.getElementById('reading-citation');
+  const readingContent = document.getElementById('reading-content');
+
+  if (readingTitle) readingTitle.textContent = text.title;
+  if (readingCite) readingCite.textContent = text.sourceCitation || '(Official TKA Reference)';
+
+  if (readingContent) {
+    let fullTextToRead = text.title + ". ";
+    let html = '';
+    text.paragraphs.forEach((p, idx) => {
+      fullTextToRead += p + " ";
+      html += `
+        <div class="reading-paragraph">
+          <span class="p-number">¶ P${idx + 1}</span>
+          ${p}
+        </div>
+      `;
+    });
+
+    html += `
+      <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-color); display: flex; gap: 10px; flex-wrap: wrap;">
+        <button class="btn btn-outline btn-sm" onclick="speakText(\`${escapeQuotes(fullTextToRead)}\`)">🔊 Play Passage Audio</button>
+        <button class="btn btn-secondary btn-sm" onclick="stopSpeaking()">⏹ Stop Audio</button>
+      </div>
+    `;
+
+    readingContent.innerHTML = html;
   }
 
+  applyReadingFontStyles();
+}
+
+function isAnswerFilled(ans) {
+  if (ans === null || ans === undefined) return false;
+  if (Array.isArray(ans)) return ans.length > 0;
+  if (typeof ans === 'object') return Object.keys(ans).length > 0;
+  return String(ans).trim().length > 0;
+}
+
+function renderQuestionPills(textQuestions) {
+  const container = document.getElementById('practice-q-nav');
+  if (!container) return;
+
+  let html = '';
+  textQuestions.forEach((q, idx) => {
+    const isActive = idx === AppState.currentQuestionIndex;
+    const isAnswered = AppState.answers[q.id] && isAnswerFilled(AppState.answers[q.id].answer);
+    
+    let classes = 'q-pill';
+    if (isActive) classes += ' active';
+    if (isAnswered) classes += ' answered';
+
+    html += `
+      <button class="${classes}" onclick="selectQuestion(${idx})">
+        ${q.number}
+      </button>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
+function selectQuestion(idx) {
+  AppState.currentQuestionIndex = idx;
+  const text = TKA_DATA.texts.find(t => t.id === AppState.selectedTextId);
+  const textQuestions = TKA_DATA.questions.filter(q => q.textId === text.id);
+  renderQuestionPills(textQuestions);
+  renderQuestionCanvas(textQuestions[idx]);
+
+  if (window.innerWidth <= 900) {
+    setMobileTab('quiz');
+  }
+}
+
+function renderQuestionCanvas(q) {
+  const container = document.getElementById('practice-canvas');
+  if (!container || !q) return;
+
+  const currentRecord = AppState.answers[q.id] || { answer: null, reason: '' };
+  const textQuestions = TKA_DATA.questions.filter(item => item.textId === q.textId);
+  const currentIdx = textQuestions.findIndex(item => item.id === q.id);
+
+  let formatHtml = '';
+
+  if (q.format === 'multiple_choice') {
+    formatHtml = `
+      <div class="options-list">
+        ${q.options.map(opt => {
+          const isSelected = currentRecord.answer === opt.key;
+          return `
+            <div class="option-card ${isSelected ? 'selected' : ''}" onclick="handleAnswer(${q.id}, '${opt.key}')">
+              <div class="opt-radio-circle">${isSelected ? '✓' : opt.key}</div>
+              <div class="opt-text"><strong>(${opt.key})</strong> ${opt.text}</div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  } else if (q.format === 'multi_select') {
+    const selectedArr = Array.isArray(currentRecord.answer) ? currentRecord.answer : [];
+    formatHtml = `
+      <p style="font-size: 0.88rem; color: var(--accent-amber); font-weight: 700; margin-bottom: 12px;">
+        💡 Complex Multiple-Select: Check all correct statements (more than one answer).
+      </p>
+      <div class="options-list">
+        ${q.options.map(opt => {
+          const isChecked = selectedArr.includes(opt.key);
+          return `
+            <div class="option-card ${isChecked ? 'selected' : ''}" onclick="handleMultiSelect(${q.id}, '${opt.key}')">
+              <div class="opt-checkbox-box">${isChecked ? '✓' : ''}</div>
+              <div class="opt-text">${opt.text}</div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  } else if (q.format === 'true_false') {
+    const currentTF = currentRecord.answer || {};
+    formatHtml = `
+      <table class="interactive-table">
+        <thead>
+          <tr>
+            <th>Statement</th>
+            <th style="width: 80px; text-align: center;">True (T)</th>
+            <th style="width: 80px; text-align: center;">False (F)</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${q.statements.map(st => {
+            const val = currentTF[st.id] || '';
+            return `
+              <tr>
+                <td>${st.text}</td>
+                <td style="text-align: center;">
+                  <label class="table-choice-label">
+                    <input type="radio" name="tf_${q.id}_${st.id}" value="T" ${val === 'T' ? 'checked' : ''} onchange="handleTrueFalse(${q.id}, '${st.id}', 'T')">
+                    <span>T</span>
+                  </label>
+                </td>
+                <td style="text-align: center;">
+                  <label class="table-choice-label">
+                    <input type="radio" name="tf_${q.id}_${st.id}" value="F" ${val === 'F' ? 'checked' : ''} onchange="handleTrueFalse(${q.id}, '${st.id}', 'F')">
+                    <span>F</span>
+                  </label>
+                </td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    `;
+  } else if (q.format === 'categorization') {
+    const currentCat = currentRecord.answer || {};
+    formatHtml = `
+      <table class="interactive-table">
+        <thead>
+          <tr>
+            <th>${q.tableHeaderStatements || 'Trait / Action'}</th>
+            ${q.categories.map(cat => `<th style="width: 140px; text-align: center;">${cat}</th>`).join('')}
+          </tr>
+        </thead>
+        <tbody>
+          ${q.items.map(item => {
+            const currentSelected = currentCat[item.id] || '';
+            const stmt = item.statement || item.text || '';
+            return `
+              <tr>
+                <td>${escapeHtml(stmt)}</td>
+                ${q.categories.map(cat => `
+                  <td style="text-align: center;">
+                    <label class="table-choice-label">
+                      <input type="radio" name="cat_${q.id}_${item.id}" value="${cat}" ${currentSelected === cat ? 'checked' : ''} onchange="handleCategorization(${q.id}, '${item.id}', '${cat}')">
+                      <span>${cat}</span>
+                    </label>
+                  </td>
+                `).join('')}
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    `;
+  }
+
+  const charCount = (currentRecord.reason || '').length;
+
+  let html = `
+    <div class="question-meta-row">
+      <span class="badge badge-blue">Question #${q.number} of 25</span>
+      <span class="badge badge-purple">${q.type}</span>
+    </div>
+
+    <div class="question-stem-text">${escapeHtml(q.question)}</div>
+
+    ${formatHtml}
+
+    <div class="reasoning-box-wrapper">
+      <div class="reasoning-header">
+        <div class="reasoning-title">
+          <span>✍️ Why did you choose this answer? (Reasoning & Text Evidence)</span>
+        </div>
+        <div class="reasoning-char-count" id="app-char-count-${q.id}">${charCount} characters</div>
+      </div>
+      <div class="reasoning-subtext">
+        Type your paragraph citation evidence (e.g., <em>"Paragraph 2, Line 3"</em>) or your logical rationale for choosing the answer above.
+      </div>
+      <textarea 
+        class="student-reason-textarea" 
+        placeholder="Write your textual evidence or critical thinking rationale here..." 
+        oninput="handleReason(${q.id}, this.value)">${escapeHtml(currentRecord.reason || '')}</textarea>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border-color);">
+      <button class="btn btn-secondary btn-sm" ${currentIdx === 0 ? 'disabled style="opacity:0.4; pointer-events:none;"' : ''} onclick="selectQuestion(${currentIdx - 1})">
+        ← Previous Question
+      </button>
+      
+      <div>
+        ${currentIdx === textQuestions.length - 1 ? `
+          <button class="btn btn-success btn-sm" onclick="setView('final_review')">
+            📋 Finish & Check Results →
+          </button>
+        ` : `
+          <button class="btn btn-primary btn-sm" onclick="selectQuestion(${currentIdx + 1})">
+            Next Question →
+          </button>
+        `}
+      </div>
+    </div>
+  `;
+
+  container.innerHTML = html;
+}
+
+// Answer Actions
+function ensureRecord(qId) {
+  if (!AppState.answers[qId]) {
+    AppState.answers[qId] = { answer: null, reason: '', timestamp: Date.now() };
+  }
+}
+
+function handleAnswer(qId, key) {
+  ensureRecord(qId);
+  AppState.answers[qId].answer = key;
+  AppState.answers[qId].timestamp = Date.now();
   saveData();
-  renderResults();
+
+  const text = TKA_DATA.texts.find(t => t.id === AppState.selectedTextId);
+  const textQuestions = TKA_DATA.questions.filter(q => q.textId === text.id);
+  renderQuestionPills(textQuestions);
+  renderQuestionCanvas(textQuestions[AppState.currentQuestionIndex]);
+  showToast(`Saved answer for Question #${textQuestions[AppState.currentQuestionIndex].number}.`, 'info');
 }
 
-function renderResults() {
-  const evalData = evaluateAllAnswers();
+function handleMultiSelect(qId, key) {
+  ensureRecord(qId);
+  let currentArr = Array.isArray(AppState.answers[qId].answer) ? [...AppState.answers[qId].answer] : [];
+  if (currentArr.includes(key)) {
+    currentArr = currentArr.filter(item => item !== key);
+  } else {
+    currentArr.push(key);
+  }
+  AppState.answers[qId].answer = currentArr.sort();
+  AppState.answers[qId].timestamp = Date.now();
+  saveData();
 
-  const scoreNumEl = document.getElementById('res-score-number');
-  const countCorrectEl = document.getElementById('res-count-correct');
-  const countIncorrectEl = document.getElementById('res-count-incorrect');
-  const countUnansweredEl = document.getElementById('res-count-unanswered');
+  const text = TKA_DATA.texts.find(t => t.id === AppState.selectedTextId);
+  const textQuestions = TKA_DATA.questions.filter(q => q.textId === text.id);
+  renderQuestionPills(textQuestions);
+  renderQuestionCanvas(textQuestions[AppState.currentQuestionIndex]);
+}
 
-  if (scoreNumEl) {
-    if (evalData.totalAssessed === 0) {
-      scoreNumEl.textContent = '--';
+function handleTrueFalse(qId, stmtId, val) {
+  ensureRecord(qId);
+  const currentObj = AppState.answers[qId].answer && typeof AppState.answers[qId].answer === 'object' && !Array.isArray(AppState.answers[qId].answer) ? { ...AppState.answers[qId].answer } : {};
+  currentObj[stmtId] = val;
+  AppState.answers[qId].answer = currentObj;
+  AppState.answers[qId].timestamp = Date.now();
+  saveData();
+
+  const text = TKA_DATA.texts.find(t => t.id === AppState.selectedTextId);
+  const textQuestions = TKA_DATA.questions.filter(q => q.textId === text.id);
+  renderQuestionPills(textQuestions);
+}
+
+function handleCategorization(qId, itemId, val) {
+  ensureRecord(qId);
+  const currentObj = AppState.answers[qId].answer && typeof AppState.answers[qId].answer === 'object' && !Array.isArray(AppState.answers[qId].answer) ? { ...AppState.answers[qId].answer } : {};
+  currentObj[itemId] = val;
+  AppState.answers[qId].answer = currentObj;
+  AppState.answers[qId].timestamp = Date.now();
+  saveData();
+
+  const text = TKA_DATA.texts.find(t => t.id === AppState.selectedTextId);
+  const textQuestions = TKA_DATA.questions.filter(q => q.textId === text.id);
+  renderQuestionPills(textQuestions);
+}
+
+function handleReason(qId, val) {
+  ensureRecord(qId);
+  AppState.answers[qId].reason = val;
+  AppState.answers[qId].timestamp = Date.now();
+  saveData();
+
+  const countEl = document.getElementById(`app-char-count-${qId}`);
+  if (countEl) countEl.textContent = `${val.length} characters`;
+}
+
+// ------------------------------------------
+// MOBILE SWITCHER & PEEK BOTTOM SHEET
+// ------------------------------------------
+function setMobileTab(tab) {
+  AppState.mobileActiveTab = tab;
+  updateMobileTabVisibility();
+}
+
+function updateMobileTabVisibility() {
+  const btnRead = document.getElementById('btn-app-mobile-read');
+  const btnQuiz = document.getElementById('btn-app-mobile-quiz');
+  const panelRead = document.getElementById('reading-panel');
+  const panelQuiz = document.getElementById('practice-panel');
+
+  if (btnRead && btnQuiz && panelRead && panelQuiz) {
+    if (window.innerWidth <= 900) {
+      if (AppState.mobileActiveTab === 'read') {
+        btnRead.classList.add('active');
+        btnQuiz.classList.remove('active');
+        panelRead.classList.remove('mobile-hidden');
+        panelQuiz.classList.add('mobile-hidden');
+      } else {
+        btnQuiz.classList.add('active');
+        btnRead.classList.remove('active');
+        panelQuiz.classList.remove('mobile-hidden');
+        panelRead.classList.add('mobile-hidden');
+      }
     } else {
-      scoreNumEl.textContent = evalData.score;
+      panelRead.classList.remove('mobile-hidden');
+      panelQuiz.classList.remove('mobile-hidden');
     }
   }
+}
 
-  if (countCorrectEl) {
-    countCorrectEl.textContent = `✅ ${evalData.correctCount} Correct`;
+window.addEventListener('resize', updateMobileTabVisibility);
+
+function openAppPeekModal() {
+  const overlay = document.getElementById('app-peek-sheet-overlay');
+  if (overlay) overlay.classList.add('active');
+}
+
+function closeAppPeekModal() {
+  const overlay = document.getElementById('app-peek-sheet-overlay');
+  if (overlay) overlay.classList.remove('active');
+}
+
+function renderPeekContent(text) {
+  const titleEl = document.getElementById('app-peek-title');
+  const bodyEl = document.getElementById('app-peek-body');
+  if (titleEl) titleEl.textContent = `${text.number}: ${text.title}`;
+  if (bodyEl) {
+    let html = '';
+    text.paragraphs.forEach((p, idx) => {
+      html += `
+        <div class="reading-paragraph" style="font-size: 1rem; margin-bottom: 14px;">
+          <span class="p-number">¶ P${idx + 1}</span>
+          ${p}
+        </div>
+      `;
+    });
+    bodyEl.innerHTML = html;
   }
-  if (countIncorrectEl) {
-    countIncorrectEl.textContent = `❌ ${evalData.incorrectCount} Incorrect`;
+}
+
+// ------------------------------------------
+// TYPOGRAPHY
+// ------------------------------------------
+function changeFontSize(delta) {
+  if (delta === 0) AppState.fontSizeLevel = 0;
+  else AppState.fontSizeLevel = Math.max(-1, Math.min(2, AppState.fontSizeLevel + delta));
+  applyReadingFontStyles();
+  showToast('Font size updated.', 'info');
+}
+
+function toggleFontFamily() {
+  AppState.fontFamily = AppState.fontFamily === 'serif' ? 'sans' : 'serif';
+  const label = document.getElementById('font-family-label');
+  if (label) label.textContent = AppState.fontFamily === 'serif' ? 'Serif' : 'Sans-Serif';
+  applyReadingFontStyles();
+}
+
+function applyReadingFontStyles() {
+  const sizeMap = { '-1': '1.02rem', '0': '1.18rem', '1': '1.32rem', '2': '1.48rem' };
+  const currentSize = sizeMap[AppState.fontSizeLevel.toString()] || '1.18rem';
+  const currentFont = AppState.fontFamily === 'serif' ? 'var(--font-serif)' : 'var(--font-sans)';
+
+  document.querySelectorAll('#reading-content .reading-paragraph').forEach(p => {
+    p.style.fontSize = currentSize;
+    p.style.fontFamily = currentFont;
+  });
+}
+
+// ==========================================
+// MODUL 3: VOCABULARY LAB
+// ==========================================
+function renderVocabLab() {
+  const container = document.getElementById('vocab-content-area');
+  if (!container) return;
+
+  let vocabList = [];
+  if (AppState.vocabFilter === 'all') {
+    TKA_DATA.texts.forEach(t => {
+      t.vocabulary.forEach(v => vocabList.push({ ...v, textNumber: t.number }));
+    });
+  } else {
+    const text = TKA_DATA.texts.find(t => t.id === Number(AppState.vocabFilter));
+    if (text) vocabList = text.vocabulary.map(v => ({ ...v, textNumber: text.number }));
   }
-  if (countUnansweredEl) {
-    if (evalData.totalAssessed === 0) {
-      countUnansweredEl.textContent = `⏳ ${evalData.total} Pending Evaluation`;
-    } else {
-      countUnansweredEl.textContent = `⏳ ${evalData.pendingCount} Pending Evaluation`;
-    }
+
+  document.querySelectorAll('.vocab-filter-pill').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.textfilter === String(AppState.vocabFilter));
+  });
+
+  document.querySelectorAll('.vocab-mode-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.mode === AppState.vocabActivity);
+  });
+
+  if (AppState.vocabActivity === 'flipcard') {
+    renderVocabFlipcards(vocabList, container);
+  } else if (AppState.vocabActivity === 'matching') {
+    renderVocabMatching(vocabList, container);
+  } else if (AppState.vocabActivity === 'context') {
+    renderVocabContextQuiz(vocabList, container);
+  } else if (AppState.vocabActivity === 'list') {
+    renderVocabTable(vocabList, container);
   }
+}
 
-  const listContainer = document.getElementById('results-review-list');
-  if (!listContainer) return;
+function filterVocab(filterVal) {
+  AppState.vocabFilter = filterVal;
+  renderVocabLab();
+}
 
-  listContainer.innerHTML = evalData.details.map(item => {
-    const q = item.question;
-    const studentAns = formatStudentAnswerText(q, item.studentEntry.answer);
+function setVocabActivity(activity) {
+  AppState.vocabActivity = activity;
+  renderVocabLab();
+}
 
-    const isCorrect = item.selfStatus === 'correct';
-    const isIncorrect = item.selfStatus === 'incorrect';
-
-    let statusClass = 'unanswered';
-    let statusText = '⚪ UNANSWERED';
-
-    if (isCorrect) {
-      statusClass = 'correct';
-      statusText = '✅ MARKED CORRECT';
-    } else if (isIncorrect) {
-      statusClass = 'incorrect';
-      statusText = '❌ MARKED INCORRECT';
-    } else if (item.isAnswered) {
-      statusClass = 'submitted';
-      statusText = '📝 SUBMITTED';
-    }
-
-    return `
-      <div class="review-item-card">
-        <div class="review-header">
-          <span style="font-weight: 900; color: var(--academic-blue);">Question ${q.number} (${q.type})</span>
-          <span class="status-badge ${statusClass}">${statusText}</span>
-        </div>
-
-        <div style="font-weight: 700; color: var(--text-main); font-size: 0.98rem; line-height: 1.5;">
-          ${q.question}
-        </div>
-
-        <div class="review-comparison-box">
-          <div><strong>Your Answer:</strong> <span style="color: ${isCorrect ? 'var(--accent-emerald-dark)' : isIncorrect ? 'var(--accent-rose)' : 'var(--academic-blue)'}; font-weight: 700;">${studentAns || '<em>No answer submitted</em>'}</span></div>
-        </div>
-
-        <div class="reasoning-display-box">
-          <div style="font-weight: 800; font-size: 0.82rem; text-transform: uppercase; color: var(--academic-blue); margin-bottom: 4px;">✍️ Your Written Reasoning & Text Evidence:</div>
-          <div>${item.studentEntry.reason ? item.studentEntry.reason : '<em>No reasoning provided.</em>'}</div>
-        </div>
-
-        <!-- Student Self-Assessment Control -->
-        <div class="self-assess-box">
-          <div class="self-assess-label">
-            <span>🎯 Self-Evaluation (Penilaian Mandiri):</span>
-            <span class="self-assess-sub">State whether your answer is correct or incorrect according to your review:</span>
+// 1. Flip Cards
+function renderVocabFlipcards(vocabList, container) {
+  let cardsHtml = '<div class="flip-cards-grid">';
+  vocabList.forEach((v, idx) => {
+    cardsHtml += `
+      <div class="flip-card-wrapper">
+        <div class="flip-card-inner" id="flip-card-${idx}" onclick="this.classList.toggle('flipped')">
+          <div class="flip-card-front">
+            <span class="badge badge-blue">${v.textNumber || 'Word'} #${idx + 1}</span>
+            <div>
+              <div class="word-title">${v.word}</div>
+              <div class="pos-tag">${v.pos}</div>
+            </div>
+            <div class="hint-text">👆 Click / Tap card to flip & view meaning</div>
           </div>
-          <div class="self-assess-buttons">
-            <button class="btn-self-rate correct ${isCorrect ? 'active' : ''}" onclick="setSelfAssessment(${q.id}, 'correct')">
-              <span>✅ Correct (Benar)</span>
-            </button>
-            <button class="btn-self-rate incorrect ${isIncorrect ? 'active' : ''}" onclick="setSelfAssessment(${q.id}, 'incorrect')">
-              <span>❌ Incorrect (Salah)</span>
-            </button>
+          <div class="flip-card-back">
+            <div>
+              <div class="back-meaning">${v.meaning}</div>
+              <div class="back-ipa">
+                <span>${v.pronunciation}</span>
+                <button class="btn-listen" onclick="event.stopPropagation(); speakWord('${v.word}')">🔊 Listen</button>
+              </div>
+              <p style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 8px;"><strong>Context:</strong> <em>"${v.context}"</em></p>
+            </div>
+            <div class="back-example">
+              <strong>Example:</strong> ${v.example}
+            </div>
           </div>
         </div>
       </div>
     `;
-  }).join('');
+  });
+  cardsHtml += '</div>';
+  container.innerHTML = cardsHtml;
 }
 
-function formatStudentAnswerText(q, rawAnswer) {
-  if (rawAnswer === null || rawAnswer === undefined || rawAnswer === '') return '';
+// 2. Matching Game
+function renderVocabMatching(vocabList, container) {
+  const vocabSample = [...vocabList].sort(() => Math.random() - 0.5).slice(0, 6);
+  const shuffledMeanings = [...vocabSample].sort(() => Math.random() - 0.5);
 
-  if (q.format === 'multiple_choice') {
-    const opt = q.options.find(o => o.key === rawAnswer);
-    return opt ? `Opsi ${rawAnswer} (${opt.text.substring(0, 45)}...)` : `Opsi ${rawAnswer}`;
-  } else if (q.format === 'multi_select') {
-    if (!Array.isArray(rawAnswer) || !rawAnswer.length) return '';
-    return rawAnswer.map(k => `[✓] Opsi ${k}`).join(', ');
-  } else if (q.format === 'categorization') {
-    if (typeof rawAnswer !== 'object') return '';
-    return Object.entries(rawAnswer).map(([itemId, cat]) => {
-      const item = q.items.find(i => i.id === itemId);
-      return `"${item ? item.statement : itemId}" ➔ ${cat}`;
-    }).join(' | ');
+  let html = `
+    <div style="background: var(--bg-card); padding: 26px; border-radius: 14px; border: 1px solid var(--border-color); margin-bottom: 20px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h3 style="font-size: 1.2rem; color: var(--text-main); font-weight: 800;">🧩 Activity 2 — Match Words & Meanings</h3>
+        <span class="badge badge-green" id="app-match-score">0 / ${vocabSample.length} Matched</span>
+      </div>
+      <p style="font-size: 0.92rem; color: var(--text-muted); margin-bottom: 22px;">Select an English word in the left column, then pair it with its correct meaning in the right column!</p>
+      
+      <div class="matching-game-grid">
+        <div class="match-column" id="app-match-left">
+          ${vocabSample.map(v => `
+            <div class="match-item" data-word="${v.word}" onclick="handleMatchSelect('left', '${v.word}')">
+              ${v.word} <span style="font-size: 0.8rem; color: var(--text-muted);">(${v.pos})</span>
+            </div>
+          `).join('')}
+        </div>
+        <div class="match-column" id="app-match-right">
+          ${shuffledMeanings.map(v => `
+            <div class="match-item" data-word="${v.word}" onclick="handleMatchSelect('right', '${v.word}')">
+              ${v.meaning}
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <div style="margin-top: 24px; text-align: right;">
+        <button class="btn btn-secondary btn-sm" onclick="renderVocabMatching(vocabList, container)">🔄 Shuffle / Play Again</button>
+      </div>
+    </div>
+  `;
+  container.innerHTML = html;
+  AppState.matchingState = { selectedLeft: null, selectedRight: null, matchedPairs: [] };
+}
+
+function handleMatchSelect(col, word) {
+  if (AppState.matchingState.matchedPairs.includes(word)) return;
+
+  if (col === 'left') {
+    AppState.matchingState.selectedLeft = word;
+    document.querySelectorAll('#app-match-left .match-item').forEach(el => {
+      el.classList.toggle('selected', el.dataset.word === word && !AppState.matchingState.matchedPairs.includes(word));
+    });
+  } else {
+    AppState.matchingState.selectedRight = word;
+    document.querySelectorAll('#app-match-right .match-item').forEach(el => {
+      el.classList.toggle('selected', el.dataset.word === word && !AppState.matchingState.matchedPairs.includes(word));
+    });
   }
-  return String(rawAnswer);
+
+  if (AppState.matchingState.selectedLeft && AppState.matchingState.selectedRight) {
+    if (AppState.matchingState.selectedLeft === AppState.matchingState.selectedRight) {
+      const matched = AppState.matchingState.selectedLeft;
+      AppState.matchingState.matchedPairs.push(matched);
+      playTone('success');
+
+      const leftEl = document.querySelector(`#app-match-left [data-word="${matched}"]`);
+      const rightEl = document.querySelector(`#app-match-right [data-word="${matched}"]`);
+      if (leftEl) { leftEl.classList.remove('selected'); leftEl.classList.add('matched'); leftEl.innerHTML += ' ✓'; }
+      if (rightEl) { rightEl.classList.remove('selected'); rightEl.classList.add('matched'); rightEl.innerHTML += ' ✓'; }
+
+      const scoreBadge = document.getElementById('app-match-score');
+      if (scoreBadge) scoreBadge.textContent = `${AppState.matchingState.matchedPairs.length} / 6 Matched`;
+
+      showToast(`Correct pair: "${matched}"!`, 'success');
+      AppState.matchingState.selectedLeft = null;
+      AppState.matchingState.selectedRight = null;
+    } else {
+      playTone('error');
+      showToast('Not quite right. Try again!', 'error');
+      setTimeout(() => {
+        document.querySelectorAll('.match-item.selected').forEach(el => el.classList.remove('selected'));
+        AppState.matchingState.selectedLeft = null;
+        AppState.matchingState.selectedRight = null;
+      }, 450);
+    }
+  }
 }
 
-// WhatsApp Share Formatter
-function shareToWhatsApp() {
-  const evalData = evaluateAllAnswers();
-  const profile = AppState.profile;
+// 3. Context Quiz
+function renderVocabContextQuiz(vocabList, container) {
+  const currentIdx = AppState.contextQuizState.currentIndex % vocabList.length;
+  const currentV = vocabList[currentIdx];
 
-  let msg = `*LAPORAN HASIL LEMBAR KERJA TKA BAHASA INGGRIS SMA 2025*\n`;
-  msg += `*MPI TKA WAJIB — SMA PLUS PGRI CIBINONG*\n`;
-  msg += `*(Self-Assessment & Critical Reasoning Mode)*\n`;
-  msg += `===================================\n`;
-  msg += `👤 *Nama Siswa:* ${profile.name || '(Belum Diisi)'}\n`;
-  msg += `🏫 *Kelas:* ${profile.class || '(Belum Diisi)'}\n`;
-  msg += `🏛️ *Sekolah:* ${profile.school}\n`;
-  msg += `👨‍🏫 *Guru Pembimbing:* ${profile.teacher}\n`;
-  msg += `===================================\n`;
-  msg += `📊 *SKOR MANDIRI:* ${evalData.score} / 100\n`;
-  msg += `✅ *Dinilai Benar:* ${evalData.correctCount} Soal\n`;
-  msg += `❌ *Dinilai Salah:* ${evalData.incorrectCount} Soal\n`;
-  msg += `⏳ *Belum Dinilai:* ${evalData.pendingCount} Soal\n`;
-  msg += `===================================\n\n`;
-  msg += `*RINCIAN JAWABAN & ALASAN BERNALAR SISWA:*\n`;
+  const otherMeanings = vocabList.filter(item => item.word !== currentV.word).map(item => item.meaning);
+  const options = [currentV.meaning, ...otherMeanings.slice(0, 3)].sort(() => Math.random() - 0.5);
 
-  evalData.details.forEach(item => {
-    const q = item.question;
-    const selfStatusText = item.selfStatus === 'correct' ? '✅ Benar' : item.selfStatus === 'incorrect' ? '❌ Salah' : '⏳ Belum Dinilai';
-    msg += `\n*No. ${q.number}* [${selfStatusText}]\n`;
-    msg += `• Jawaban: ${formatStudentAnswerText(q, item.studentEntry.answer) || '(Tidak dijawab)'}\n`;
-    msg += `• Alasan/Bukti Teks: ${item.studentEntry.reason || '(Tidak ada alasan)'}\n`;
+  let html = `
+    <div style="background: var(--bg-card); padding: 32px; border-radius: 14px; border: 1px solid var(--border-color); max-width: 780px; margin: 0 auto; box-shadow: var(--shadow-sm);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
+        <span class="badge badge-amber">Context Challenge (${currentV.textNumber || 'Text'})</span>
+        <span style="font-size: 0.92rem; color: var(--text-muted); font-weight: 700;">Word ${currentIdx + 1} of ${vocabList.length}</span>
+      </div>
+
+      <h3 style="font-size: 1.25rem; color: var(--text-main); margin-bottom: 16px; font-weight: 800;">What is the contextual meaning of "<span style="color: var(--academic-blue);">${currentV.word}</span>" in this sentence?</h3>
+      
+      <div style="background: var(--bg-card-alt); border-left: 4px solid var(--academic-blue); padding: 18px; border-radius: 8px; font-family: var(--font-serif); font-size: 1.1rem; margin-bottom: 24px; color: var(--text-main);">
+        "${currentV.context}"
+      </div>
+
+      <div class="options-list" id="app-context-options-list">
+        ${options.map(opt => `
+          <div class="option-card" onclick="checkContextAnswer('${escapeHtml(opt)}', '${escapeHtml(currentV.meaning)}', this)">
+            <div class="opt-radio-circle"></div>
+            <div class="opt-text">${opt}</div>
+          </div>
+        `).join('')}
+      </div>
+
+      <div id="app-context-feedback-box" style="display: none; margin-top: 20px;"></div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border-color);">
+        <button class="btn btn-outline btn-sm" onclick="speakWord('${currentV.word}')">🔊 Listen Word</button>
+        <button class="btn btn-primary" id="btn-app-next-context" style="display: none;" onclick="nextContextQuiz(${vocabList.length})">Next Word →</button>
+      </div>
+    </div>
+  `;
+  container.innerHTML = html;
+}
+
+function checkContextAnswer(chosen, correct, el) {
+  if (AppState.contextQuizState.answered) return;
+  AppState.contextQuizState.answered = true;
+
+  const isRight = chosen === correct;
+  if (isRight) playTone('success');
+  else playTone('error');
+
+  const feedbackBox = document.getElementById('app-context-feedback-box');
+  const nextBtn = document.getElementById('btn-app-next-context');
+
+  document.querySelectorAll('#app-context-options-list .option-card').forEach(card => {
+    card.style.pointerEvents = 'none';
+    if (card.querySelector('.opt-text').textContent.trim() === correct) {
+      card.style.borderColor = 'var(--accent-green)';
+      card.style.background = 'var(--accent-green-light)';
+    } else if (card === el && !isRight) {
+      card.style.borderColor = 'var(--accent-red)';
+      card.style.background = 'var(--accent-red-light)';
+    }
   });
 
-  msg += `\n_Dikirim via MPI TKA Bahasa Inggris 2025 (Handphone Mode)_`;
+  if (feedbackBox) {
+    feedbackBox.style.display = 'block';
+    if (isRight) {
+      feedbackBox.innerHTML = `
+        <div style="background: var(--accent-green-light); color: var(--accent-green); padding: 14px; border-radius: 8px; font-weight: 700;">
+          ✓ Correct! <strong>${correct}</strong> is the most suitable contextual meaning.
+        </div>
+      `;
+    } else {
+      feedbackBox.innerHTML = `
+        <div style="background: var(--accent-red-light); color: var(--accent-red); padding: 14px; border-radius: 8px; font-weight: 700;">
+          ✗ Incorrect. The accurate meaning is: <strong>${correct}</strong>.
+        </div>
+      `;
+    }
+  }
 
-  const waUrl = `https://wa.me/?text=${encodeURIComponent(msg)}`;
-  window.open(waUrl, '_blank');
+  if (nextBtn) nextBtn.style.display = 'inline-flex';
 }
 
-function printResults() {
-  setTimeout(() => {
-    window.print();
-  }, 300);
+function nextContextQuiz(total) {
+  AppState.contextQuizState.answered = false;
+  AppState.contextQuizState.currentIndex = (AppState.contextQuizState.currentIndex + 1) % total;
+  renderVocabLab();
 }
 
-function copySummaryToClipboard() {
-  const evalData = evaluateAllAnswers();
-  const profile = AppState.profile;
+// 4. Master Table
+function renderVocabTable(vocabList, container) {
+  const q = (AppState.vocabSearchQuery || '').toLowerCase();
+  const filtered = vocabList.filter(v => 
+    v.word.toLowerCase().includes(q) || 
+    v.meaning.toLowerCase().includes(q) || 
+    v.context.toLowerCase().includes(q)
+  );
 
-  let summary = `HASIL EVALUASI TKA BAHASA INGGRIS SMA 2025 (SELF-ASSESSMENT)\n`;
-  summary += `Nama: ${profile.name || '-'} | Kelas: ${profile.class || '-'} | Skor: ${evalData.score}/100 (Benar: ${evalData.correctCount}, Salah: ${evalData.incorrectCount}, Belum Dinilai: ${evalData.pendingCount})\n`;
-
-  navigator.clipboard.writeText(summary).then(() => {
-    showToast('📋 Summary copied to clipboard!');
-  }).catch(() => {
-    showToast('❌ Failed to copy to clipboard.');
-  });
+  let html = `
+    <div>
+      <input type="text" class="search-input-box" placeholder="🔍 Search word, meaning, or sentence (Live Search)..." value="${escapeHtml(AppState.vocabSearchQuery)}" oninput="handleAppVocabSearch(this.value)">
+      <div style="overflow-x: auto;">
+        <table class="vocab-table">
+          <thead>
+            <tr>
+              <th>Word & IPA</th>
+              <th>Passage</th>
+              <th>PoS</th>
+              <th>Indonesian Meaning</th>
+              <th>Context in Text</th>
+              <th>Example Sentence</th>
+              <th>Audio</th>
+            </tr>
+          </thead>
+          <tbody>
+  `;
+  if (filtered.length === 0) {
+    html += `<tr><td colspan="7" style="text-align: center; padding: 24px; color: var(--text-muted);">No vocabulary matching your search query.</td></tr>`;
+  } else {
+    filtered.forEach(v => {
+      html += `
+        <tr>
+          <td><strong>${v.word}</strong><br><span style="font-size: 0.82rem; color: var(--text-muted);">${v.pronunciation}</span></td>
+          <td><span class="badge badge-gray">${v.textNumber || 'Text'}</span></td>
+          <td><span class="badge badge-cyan">${v.pos}</span></td>
+          <td><strong>${v.meaning}</strong></td>
+          <td style="font-size: 0.88rem; font-style: italic;">"${v.context}"</td>
+          <td style="font-size: 0.88rem;">${v.example}</td>
+          <td><button class="btn-listen" onclick="speakWord('${v.word}')">🔊</button></td>
+        </tr>
+      `;
+    });
+  }
+  html += '</tbody></table></div></div>';
+  container.innerHTML = html;
 }
 
-// Reset Confirmation Modal
-function openResetModal() {
-  const modal = document.getElementById('reset-confirm-modal');
-  if (modal) modal.classList.add('active');
+function handleAppVocabSearch(query) {
+  AppState.vocabSearchQuery = query;
+  const container = document.getElementById('vocab-content-area');
+  let vocabList = [];
+  if (AppState.vocabFilter === 'all') {
+    TKA_DATA.texts.forEach(t => {
+      t.vocabulary.forEach(v => vocabList.push({ ...v, textNumber: t.number }));
+    });
+  } else {
+    const text = TKA_DATA.texts.find(t => t.id === Number(AppState.vocabFilter));
+    if (text) vocabList = text.vocabulary.map(v => ({ ...v, textNumber: text.number }));
+  }
+  renderVocabTable(vocabList, container);
 }
 
-function closeResetModal() {
-  const modal = document.getElementById('reset-confirm-modal');
-  if (modal) modal.classList.remove('active');
-}
-
-function confirmResetWorksheet() {
-  AppState.answers = {};
-  AppState.selfAssessment = {};
-  AppState.currentQuestionIndex = 0;
-  saveData();
-  closeResetModal();
-  showToast('🔄 Worksheet has been reset.');
-  setView('worksheet');
-}
-
-// Toast Feedback Notification
-function showToast(msg) {
-  const container = document.getElementById('toast-container');
+// ==========================================
+// MODUL 4: STRATEGY GUIDE (4 PILLARS)
+// ==========================================
+function renderTKAStrategy() {
+  const container = document.getElementById('strategy-cards-container');
   if (!container) return;
 
-  const toast = document.createElement('div');
-  toast.className = 'toast';
-  toast.textContent = msg;
-  container.appendChild(toast);
+  let html = '';
+  TKA_DATA.strategies.forEach(strat => {
+    html += `
+      <div class="strategy-card-accordion" id="app-strat-acc-${strat.id}">
+        <div class="strategy-accordion-header" onclick="toggleAppStrategyAccordion('${strat.id}')">
+          <div class="strategy-accordion-title">${strat.name}</div>
+          <span class="badge badge-blue">4 HOTS PILLARS ▾</span>
+        </div>
+        <div class="strategy-accordion-body">
+          ${strat.quickQuestion ? `<div style="font-weight: 700; color: var(--academic-blue); margin-bottom: 12px;">❓ Key Question: ${strat.quickQuestion}</div>` : ''}
+          
+          <div class="strategy-pillars-grid">
+            <div class="pillar-box pillar-1">
+              <div class="pillar-title">⚡ Pilar 1: Formula Emas</div>
+              <div class="pillar-content">
+                <strong>${strat.formula || 'Konsep Dasar'}</strong>
+              </div>
+            </div>
 
-  setTimeout(() => {
-    toast.remove();
-  }, 2600);
+            <div class="pillar-box pillar-2">
+              <div class="pillar-title">📌 Pillar 2: Question Stems</div>
+              <div class="pillar-content">
+                <ul style="padding-left: 18px; margin: 0;">
+                  ${(strat.questionCharacteristics || [strat.quickQuestion || 'Standard TKA Question']).map(q => `<li>${q}</li>`).join('')}
+                </ul>
+              </div>
+            </div>
+
+            <div class="pillar-box pillar-3">
+              <div class="pillar-title">📋 Pilar 3: Langkah Sistematis Menjawab</div>
+              <div class="pillar-content">
+                <ol style="padding-left: 18px; margin: 0;">
+                  ${strat.steps.map(step => `<li>${step}</li>`).join('')}
+                </ol>
+              </div>
+            </div>
+
+            <div class="pillar-box pillar-4">
+              <div class="pillar-title">⚠️ Pilar 4: Waspada Pengecoh</div>
+              <div class="pillar-content">
+                <ul style="padding-left: 18px; margin: 0;">
+                  ${(strat.distractorTraps || ['Waspada terhadap pengecoh yang menyimpang dari konteks bacaan.']).map(trap => `<li>${trap}</li>`).join('')}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
 }
 
-// ==========================================================================
-// EXPLICIT GLOBAL WINDOW BINDINGS (ANTI-BUG GUARANTEE)
-// ==========================================================================
+function toggleAppStrategyAccordion(id) {
+  const el = document.getElementById(`app-strat-acc-${id}`);
+  if (el) el.classList.toggle('open');
+}
+
+// ==========================================
+// MODUL 5: FINAL REVIEW & ON-DEMAND CHECK
+// ==========================================
+function calculateAppScore() {
+  let correctCount = 0;
+  let incorrectCount = 0;
+  let answeredCount = 0;
+  let reasonedCount = 0;
+  const total = TKA_DATA.questions.length;
+
+  TKA_DATA.questions.forEach(q => {
+    const rec = AppState.answers[q.id];
+    if (rec && isAnswerFilled(rec.answer)) {
+      answeredCount++;
+      if (rec.reason && rec.reason.trim().length > 0) reasonedCount++;
+    }
+
+    const evalStatus = AppState.evaluations[q.id];
+    if (evalStatus === 'correct') {
+      correctCount++;
+    } else if (evalStatus === 'incorrect') {
+      incorrectCount++;
+    }
+  });
+
+  const evaluatedCount = correctCount + incorrectCount;
+  const unevaluatedCount = total - evaluatedCount;
+
+  return {
+    total,
+    answeredCount,
+    reasonedCount,
+    evaluatedCount,
+    unevaluatedCount,
+    correct: correctCount,
+    incorrect: incorrectCount,
+    percentage: total > 0 ? Math.round((correctCount / total) * 100) : 0
+  };
+}
+
+function formatAnswerString(q, userAns) {
+  if (!isAnswerFilled(userAns)) return '<em>(Unanswered)</em>';
+  if (q.format === 'multiple_choice') {
+    const optObj = q.options.find(o => o.key === userAns);
+    return `<strong>Option (${userAns})</strong>: ${optObj ? optObj.text : ''}`;
+  } else if (q.format === 'multi_select') {
+    return `<strong>Selected Options</strong>: Statements [${(userAns || []).join(', ')}]`;
+  } else if (q.format === 'true_false') {
+    return `<div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px;">` + q.statements.map(st => {
+      const chosen = userAns[st.id] || '(Not answered)';
+      return `<div>• <em>"${escapeHtml(st.text)}"</em> → <strong>[ ${escapeHtml(chosen)} ]</strong></div>`;
+    }).join('') + `</div>`;
+  } else if (q.format === 'categorization') {
+    return `<div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px;">` + q.items.map((it, idx) => {
+      const chosen = userAns[it.id] || '(Not answered)';
+      const stmt = it.statement || it.text || `Item ${idx+1}`;
+      return `<div>• <em>"${escapeHtml(stmt)}"</em> → <strong>[ ${escapeHtml(chosen)} ]</strong></div>`;
+    }).join('') + `</div>`;
+  }
+  return String(userAns);
+}
+
+function formatAnswerPlainText(q, userAns) {
+  if (!isAnswerFilled(userAns)) return '(Unanswered)';
+  if (q.format === 'multiple_choice') {
+    const optObj = q.options.find(o => o.key === userAns);
+    return `Option (${userAns}): ${optObj ? optObj.text : ''}`;
+  } else if (q.format === 'multi_select') {
+    return `Statements [${(userAns || []).join(', ')}]`;
+  } else if (q.format === 'true_false') {
+    return q.statements.map(st => {
+      const chosen = userAns[st.id] || '(Not answered)';
+      return `\n    - "${st.text}" → [${chosen}]`;
+    }).join('');
+  } else if (q.format === 'categorization') {
+    return q.items.map((it, idx) => {
+      const chosen = userAns[it.id] || '(Not answered)';
+      const stmt = it.statement || it.text || `Item ${idx+1}`;
+      return `\n    - "${stmt}" → [${chosen}]`;
+    }).join('');
+  }
+  return String(userAns);
+}
+
+function setAppManualEvaluation(qId, status) {
+  if (AppState.evaluations[qId] === status) {
+    delete AppState.evaluations[qId];
+    showToast(`Evaluation for Question #${qId} cleared`, 'info');
+  } else {
+    AppState.evaluations[qId] = status;
+    if (status === 'correct') {
+      playTone('success');
+      showToast(`Question #${qId} marked as: ✅ Correct`, 'success');
+    } else {
+      playTone('error');
+      showToast(`Question #${qId} marked as: ❌ Incorrect`, 'info');
+    }
+  }
+  saveData();
+  renderFinalReview();
+}
+
+function renderFinalReview() {
+  const container = document.getElementById('final-review-container');
+  if (!container) return;
+
+  const scoreData = calculateAppScore();
+  const studentName = AppState.profile.name || '(Not Filled)';
+  const studentClass = AppState.profile.class || '(Not Filled)';
+  const studentSchool = AppState.profile.school || 'SMA Plus PGRI Cibinong';
+  const teacher = AppState.profile.teacher || 'Muhammad Falahaen Jiddan, M.Pd. Gr.';
+
+  let html = `
+    <div class="summary-meta-header">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); padding-bottom: 20px; margin-bottom: 22px; flex-wrap: wrap; gap: 14px;">
+        <div>
+          <span class="badge badge-green" style="margin-bottom: 8px;">STUDENT WORKSHEET & PERFORMANCE REPORT</span>
+          <h2 style="font-size: 1.8rem; font-weight: 900; color: var(--text-main); margin-bottom: 4px;">LATIHAN TKA BAHASA INGGRIS SMA 2026 NARRATIVE TEXT</h2>
+          <p style="font-size: 0.95rem; color: var(--text-muted);">25 TKA Practice Questions, Student Reasoning, Self-Evaluation & Performance Report</p>
+        </div>
+        <div class="action-toolbar">
+          <button class="btn btn-success" onclick="sendAppToWhatsApp()">📲 Send to WhatsApp</button>
+          <button class="btn btn-primary" onclick="window.print()">🖨️ Print / Save PDF</button>
+          <button class="btn btn-secondary" onclick="copyAppSummary()">📋 Copy Summary</button>
+          <button class="btn btn-danger" onclick="openResetModal()">🔄 Reset Worksheet</button>
+        </div>
+      </div>
+
+      <div style="background: var(--bg-card-alt); border-radius: 12px; padding: 18px 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 22px;">
+        <div>
+          <div class="student-input-label">Student Name:</div>
+          <div style="font-size: 1.1rem; font-weight: 800; color: var(--text-main);">${escapeHtml(studentName)}</div>
+        </div>
+        <div>
+          <div class="student-input-label">Class / Group:</div>
+          <div style="font-size: 1.1rem; font-weight: 800; color: var(--text-main);">${escapeHtml(studentClass)}</div>
+        </div>
+        <div>
+          <div class="student-input-label">School / Institution:</div>
+          <div style="font-size: 1rem; font-weight: 700; color: var(--text-main);">${escapeHtml(studentSchool)}</div>
+        </div>
+        <div>
+          <div class="student-input-label">Teacher / Advisor:</div>
+          <div style="font-size: 1rem; font-weight: 700; color: var(--text-main);">${escapeHtml(teacher)}</div>
+        </div>
+      </div>
+
+      <div class="overview-stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon" style="background: var(--accent-green-light); color: var(--accent-green);">📝</div>
+          <div>
+            <div class="stat-val">${scoreData.answeredCount}/${scoreData.total}</div>
+            <div class="stat-label">Questions Answered</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background: var(--accent-cyan-light); color: var(--academic-blue);">✍️</div>
+          <div>
+            <div class="stat-val">${scoreData.reasonedCount}/${scoreData.total}</div>
+            <div class="stat-label">Reasoning Provided</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background: var(--accent-green-light); color: var(--accent-green);">✅</div>
+          <div>
+            <div class="stat-val">${scoreData.correct}/${scoreData.total}</div>
+            <div class="stat-label">Correct Score (${scoreData.percentage}%)</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background: var(--accent-red-light); color: var(--accent-red);">❌</div>
+          <div>
+            <div class="stat-val">${scoreData.incorrect}/${scoreData.total}</div>
+            <div class="stat-label">Incorrect Answers</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px; flex-wrap: wrap; gap: 8px;">
+        <span style="font-weight: 800; font-size: 1.1rem; color: var(--text-main);">📋 Student Answer Sheet & Self-Assessment:</span>
+        <span style="font-size: 0.88rem; color: var(--text-muted);">Mark each question using <strong>✅ Correct</strong> or <strong>❌ Incorrect</strong> based on class review.</span>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+  `;
+
+  TKA_DATA.questions.forEach(q => {
+    const rec = AppState.answers[q.id] || { answer: null, reason: '' };
+    const isAnswered = rec.answer !== null && rec.answer !== undefined;
+    const evalStatus = AppState.evaluations[q.id]; // 'correct', 'incorrect', or undefined
+    const hasReason = rec.reason && rec.reason.trim().length > 0;
+
+    let badgeStatusHtml = '';
+    if (evalStatus === 'correct') {
+      badgeStatusHtml = '<span class="badge badge-green">✅ MARKED CORRECT</span>';
+    } else if (evalStatus === 'incorrect') {
+      badgeStatusHtml = '<span class="badge badge-red">❌ MARKED INCORRECT</span>';
+    } else {
+      badgeStatusHtml = isAnswered 
+        ? '<span class="badge badge-blue">📝 SUBMITTED (PENDING CHECK)</span>' 
+        : '<span class="badge badge-gray">⚪ UNANSWERED</span>';
+    }
+
+    html += `
+      <div class="summary-card-item">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+          <div>
+            <span class="badge badge-blue">Text ${q.textId} • Question #${q.number}</span>
+            <span class="badge badge-purple">${q.type}</span>
+          </div>
+          <div>
+            ${badgeStatusHtml}
+          </div>
+        </div>
+
+        <div style="font-weight: 800; font-size: 1.05rem; color: var(--text-main); margin-bottom: 12px; white-space: pre-line;">
+          ${escapeHtml(q.question)}
+        </div>
+
+        <div style="background: var(--bg-card-alt); padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 10px; font-size: 0.95rem;">
+          <div style="font-size: 0.8rem; font-weight: 800; color: var(--text-muted); margin-bottom: 4px;">STUDENT SELECTION:</div>
+          <div>${formatAnswerString(q, rec.answer)}</div>
+        </div>
+
+        <div style="background: var(--accent-cyan-light); border-left: 4px solid var(--academic-blue); padding: 12px 16px; border-radius: 6px; margin-bottom: 12px;">
+          <strong style="font-size: 0.86rem; color: var(--academic-blue);">✍️ Student Reasoning & Text Evidence:</strong>
+          <p style="font-size: 0.92rem; color: var(--text-main); margin-top: 4px; line-height: 1.5; font-style: ${hasReason ? 'normal' : 'italic'};">
+            ${hasReason ? escapeHtml(rec.reason) : 'No written reasoning provided for this question.'}
+          </p>
+        </div>
+
+        <!-- Manual Evaluation Buttons -->
+        <div class="manual-eval-box">
+          <div>
+            <strong style="font-size: 0.92rem; color: var(--text-main);">⚖️ Student Self-Assessment:</strong>
+            <span style="font-size: 0.84rem; color: var(--text-muted); display: block;">Declare whether your answer is correct or incorrect:</span>
+          </div>
+          <div class="eval-btn-group">
+            <button class="eval-btn eval-btn-correct ${evalStatus === 'correct' ? 'active' : ''}" onclick="setAppManualEvaluation(${q.id}, 'correct')">
+              ✅ Correct
+            </button>
+            <button class="eval-btn eval-btn-incorrect ${evalStatus === 'incorrect' ? 'active' : ''}" onclick="setAppManualEvaluation(${q.id}, 'incorrect')">
+              ❌ Incorrect
+            </button>
+          </div>
+        </div>
+
+      </div>
+    `;
+  });
+
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function sendAppToWhatsApp() {
+  const name = AppState.profile.name || 'Student';
+  const grade = AppState.profile.class || '-';
+  const school = AppState.profile.school || 'SMA Plus PGRI Cibinong';
+  const teacher = AppState.profile.teacher || 'Muhammad Falahaen Jiddan, M.Pd. Gr.';
+  const scoreData = calculateAppScore();
+
+  let text = `*LATIHAN TKA BAHASA INGGRIS SMA 2026 NARRATIVE TEXT*\n`;
+  text += `*Student Name:* ${name}\n`;
+  text += `*Class / Group:* ${grade}\n`;
+  text += `*School:* ${school}\n`;
+  text += `*Teacher / Advisor:* ${teacher}\n`;
+  text += `*Self-Assessment Score (Correct):* ${scoreData.correct}/${scoreData.total} (${scoreData.percentage}%)\n`;
+  text += `*Incorrect Answers:* ${scoreData.incorrect}/${scoreData.total}\n`;
+  text += `*Pending Check / Unevaluated:* ${scoreData.unevaluatedCount}/${scoreData.total}\n`;
+  text += `*Questions Answered:* ${scoreData.answeredCount}/${scoreData.total}\n`;
+  text += `*Reasoning Provided:* ${scoreData.reasonedCount}/${scoreData.total}\n\n`;
+  text += `*--- STUDENT ANSWER SHEET & SELF-ASSESSMENT REPORT ---*\n`;
+
+  TKA_DATA.questions.forEach(q => {
+    const rec = AppState.answers[q.id] || { answer: null, reason: '' };
+    const evalStatus = AppState.evaluations[q.id];
+    let statusText = '⚪ Unevaluated';
+    if (evalStatus === 'correct') statusText = '✅ Correct';
+    else if (evalStatus === 'incorrect') statusText = '❌ Incorrect';
+
+    text += `\n*Question ${q.number} (${q.type})*:\n`;
+    text += `• Evaluation Status: ${statusText}\n`;
+    text += `• Student Selection: ${formatAnswerPlainText(q, rec.answer)}\n`;
+    text += `• Text Evidence & Reasoning: ${rec.reason ? rec.reason : '(No reasoning provided)'}\n`;
+  });
+
+  const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+  window.open(url, '_blank');
+}
+
+function copyAppSummary() {
+  const name = AppState.profile.name || 'Student';
+  const grade = AppState.profile.class || '-';
+  const school = AppState.profile.school || 'SMA Plus PGRI Cibinong';
+  const teacher = AppState.profile.teacher || 'Muhammad Falahaen Jiddan, M.Pd. Gr.';
+  const scoreData = calculateAppScore();
+
+  let text = `LATIHAN TKA BAHASA INGGRIS SMA 2026 NARRATIVE TEXT\n`;
+  text += `Student Name: ${name}\nClass: ${grade}\nSchool: ${school}\nTeacher: ${teacher}\n`;
+  text += `Self-Assessment Score (Correct): ${scoreData.correct}/${scoreData.total} (${scoreData.percentage}%)\n`;
+  text += `Incorrect Answers: ${scoreData.incorrect}/${scoreData.total}\n`;
+  text += `Pending Check / Unevaluated: ${scoreData.unevaluatedCount}/${scoreData.total}\n`;
+  text += `Questions Answered: ${scoreData.answeredCount}/${scoreData.total}\n`;
+  text += `Reasoning Provided: ${scoreData.reasonedCount}/${scoreData.total}\n\n`;
+  text += `--- STUDENT ANSWER SHEET & SELF-ASSESSMENT REPORT ---\n\n`;
+
+  TKA_DATA.questions.forEach(q => {
+    const rec = AppState.answers[q.id] || { answer: null, reason: '' };
+    const evalStatus = AppState.evaluations[q.id];
+    let statusText = '⚪ Unevaluated';
+    if (evalStatus === 'correct') statusText = '✅ Correct';
+    else if (evalStatus === 'incorrect') statusText = '❌ Incorrect';
+
+    text += `Question ${q.number} (${q.type}):\n`;
+    text += `Evaluation Status: ${statusText}\n`;
+    text += `Student Selection: ${formatAnswerPlainText(q, rec.answer)}\n`;
+    text += `Reasoning: ${rec.reason || '-'}\n\n`;
+  });
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      showToast('Summary copied to clipboard!', 'success');
+    }).catch(() => {
+      showToast('Failed to copy automatically.', 'error');
+    });
+  }
+}
+
+// ------------------------------------------
+// MODAL ACTIONS
+// ------------------------------------------
+function openResetModal() {
+  const m = document.getElementById('reset-modal');
+  if (m) m.classList.add('active');
+}
+
+function closeAppModal(id) {
+  const m = document.getElementById(id);
+  if (m) m.classList.remove('active');
+}
+
+function confirmReset() {
+  AppState.answers = {};
+  AppState.evaluations = {};
+  SafeStorage.removeItem(APP_STORAGE_KEY);
+  closeAppModal('reset-modal');
+  showToast('Worksheet has been reset.', 'info');
+  setView('dashboard');
+}
+
+// ------------------------------------------
+// UTILITIES & EVENTS
+// ------------------------------------------
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function escapeQuotes(str) {
+  if (!str) return '';
+  return String(str).replace(/"/g, '\\"').replace(/'/g, "\\'").replace(/\n/g, ' ');
+}
+
+function setupEvents() {
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) overlay.classList.remove('active');
+    });
+  });
+}
+
+// Explicit Window Bindings
 window.setView = setView;
 window.toggleTheme = toggleTheme;
-window.openWorksheetForText = openWorksheetForText;
-window.setMobileWorksheetTab = setMobileWorksheetTab;
-window.selectQuestionIndex = selectQuestionIndex;
-window.setFontSize = setFontSize;
-window.setFontFamily = setFontFamily;
-window.selectOption = selectOption;
-window.toggleMultiOption = toggleMultiOption;
-window.selectCategory = selectCategory;
-window.onReasonInput = onReasonInput;
-window.openPeekPassage = openPeekPassage;
-window.closePeekPassage = closePeekPassage;
-window.speakPassage = speakPassage;
-window.stopSpeech = stopSpeech;
+window.openWorkspace = openWorkspace;
+window.selectQuestion = selectQuestion;
+window.handleAnswer = handleAnswer;
+window.handleMultiSelect = handleMultiSelect;
+window.handleTrueFalse = handleTrueFalse;
+window.handleCategorization = handleCategorization;
+window.handleReason = handleReason;
+window.changeFontSize = changeFontSize;
+window.toggleFontFamily = toggleFontFamily;
+window.setMobileTab = setMobileTab;
+window.openAppPeekModal = openAppPeekModal;
+window.closeAppPeekModal = closeAppPeekModal;
+window.speakText = speakText;
+window.stopSpeaking = stopSpeaking;
 window.speakWord = speakWord;
-window.setVocabFilter = setVocabFilter;
+window.filterVocab = filterVocab;
 window.setVocabActivity = setVocabActivity;
-window.flipCurrentCard = flipCurrentCard;
-window.prevFlipCard = prevFlipCard;
-window.nextFlipCard = nextFlipCard;
-window.shuffleFlipCards = shuffleFlipCards;
-window.selectMatchCard = selectMatchCard;
-window.resetMatchGame = resetMatchGame;
-window.answerContextQuiz = answerContextQuiz;
+window.handleMatchSelect = handleMatchSelect;
+window.checkContextAnswer = checkContextAnswer;
 window.nextContextQuiz = nextContextQuiz;
-window.filterVocabTable = filterVocabTable;
-window.toggleStrategyCard = toggleStrategyCard;
-window.setSelfAssessment = setSelfAssessment;
-window.shareToWhatsApp = shareToWhatsApp;
-window.printResults = printResults;
-window.copySummaryToClipboard = copySummaryToClipboard;
+window.handleAppVocabSearch = handleAppVocabSearch;
 window.openResetModal = openResetModal;
-window.closeResetModal = closeResetModal;
-window.confirmResetWorksheet = confirmResetWorksheet;
-window.showToast = showToast;
+window.closeAppModal = closeAppModal;
+window.confirmReset = confirmReset;
+window.toggleAppStrategyAccordion = toggleAppStrategyAccordion;
+window.setAppManualEvaluation = setAppManualEvaluation;
+window.sendAppToWhatsApp = sendAppToWhatsApp;
+window.copyAppSummary = copyAppSummary;
+window.saveAppProfile = saveAppProfile;
+
+// Guaranteed DOM Ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initApp);
+} else {
+  initApp();
+}

@@ -2,456 +2,319 @@
 <html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>MPI TKA BAHASA INGGRIS SMA 2025 (WAJIB) — Student Worksheet & Reasoning Mode</title>
-  <meta name="description" content="Modul Latihan 20 Soal TKA, Penalaran Siswa, Vocab Lab & Strategi Cepat TKA Bahasa Inggris SMA 2025 — SMA Plus PGRI Cibinong">
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>LATIHAN TKA BAHASA INGGRIS SMA 2026 NARRATIVE TEXT — Student Worksheet & Reasoning</title>
+  <meta name="description" content="LATIHAN TKA BAHASA INGGRIS SMA 2026 NARRATIVE TEXT: 25 TKA Practice Questions, Student Reasoning, Concept Lab & Quick Strategies.">
+  
   <!-- Google Fonts: Inter & Merriweather -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400&display=swap" rel="stylesheet">
-
-  <!-- Main Stylesheet -->
+  
+  <!-- Stylesheet -->
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-<div class="app-container">
-  <!-- ========================================================================
-       TOP NAVIGATION BAR
-       ======================================================================== -->
-  <header class="navbar">
-    <div class="nav-brand" onclick="setView('dashboard')">
-      <span class="brand-badge">TKA 2025</span>
-      <div class="brand-title">
-        <span>MPI TKA ENGLISH WAJIB</span>
-        <span class="sub">SMA Plus PGRI Cibinong</span>
-      </div>
-    </div>
-    <div class="nav-actions">
-      <button class="btn-theme-toggle" id="btn-theme-toggle" onclick="toggleTheme()">
-        <span id="theme-icon">🌙</span>
-        <span id="theme-label">Dark Mode</span>
-      </button>
-    </div>
-  </header>
-
-  <!-- ========================================================================
-       MAIN VIEWS CONTAINER
-       ======================================================================== -->
-  <main class="main-view-container">
-
-    <!-- ======================================================================
-         MODUL 1: DASHBOARD & IDENTITAS SISWA
-         ====================================================================== -->
-    <section id="view-dashboard" class="view-section active">
-      <!-- Student Profile Card -->
-      <div class="student-id-card">
-        <div class="id-card-header">
-          <div class="id-card-title">
-            <span>👤</span>
-            <span>Student Identification (Auto-Saved)</span>
-          </div>
-          <span class="auto-save-pill">● Local Storage Active</span>
-        </div>
-        <div class="student-inputs-grid">
-          <div class="student-input-group">
-            <label class="student-input-label" for="input-student-name">Full Name</label>
-            <input type="text" id="input-student-name" class="student-input-field" placeholder="Enter student name...">
-          </div>
-          <div class="student-input-group">
-            <label class="student-input-label" for="input-student-class">Class / Group</label>
-            <input type="text" id="input-student-class" class="student-input-field" placeholder="e.g. XII-A / XII-1">
-          </div>
-          <div class="student-input-group">
-            <label class="student-input-label" for="input-student-school">School Origin</label>
-            <input type="text" id="input-student-school" class="student-input-field" value="SMA Plus PGRI Cibinong" readonly>
-          </div>
-          <div class="student-input-group">
-            <label class="student-input-label" for="input-student-teacher">Advisor / Teacher</label>
-            <input type="text" id="input-student-teacher" class="student-input-field" value="Muhammad Falahaen Jiddan, M.Pd. Gr." readonly>
-          </div>
-        </div>
+  <div class="app-container">
+    
+    <!-- ==========================================
+         TOP NAVIGATION BAR
+    ========================================== -->
+    <header class="navbar">
+      <div class="nav-brand" onclick="setStudentView('dashboard')">
+        <span class="student-badge">TKA 2026</span>
+        <span class="brand-title">Narrative Text</span>
       </div>
 
-      <!-- Hero Banner -->
-      <div class="dash-hero-card">
-        <div class="hero-tag">🔥 TKA English Exam Readiness 2025</div>
-        <h1 class="hero-main-title">Interactive HOTS Practice & Reasoning Module</h1>
-        <p class="hero-main-desc">
-          Master 20 official TKA questions with step-by-step critical reasoning, interactive 3D Vocab Lab, 4-pillar HOTS strategy guides, and automated performance analytics.
-        </p>
-        <button class="hero-btn-start" onclick="setView('worksheet')">
-          <span>🚀 Start / Resume Worksheet</span>
+      <nav>
+        <ul class="nav-links">
+          <li class="nav-item active" data-view="dashboard" onclick="setStudentView('dashboard')">📊 Dashboard</li>
+          <li class="nav-item" data-view="student_workspace" onclick="setStudentView('student_workspace')">✍️ Worksheet</li>
+          <li class="nav-item" data-view="vocab_lab" onclick="setStudentView('vocab_lab')">📚 Vocab Lab</li>
+          <li class="nav-item" data-view="tka_strategy" onclick="setStudentView('tka_strategy')">🎯 Strategy Guide</li>
+          <li class="nav-item" data-view="worksheet_summary" onclick="setStudentView('worksheet_summary')">📋 My Answer Sheet</li>
+        </ul>
+      </nav>
+
+      <div class="nav-actions">
+        <button class="btn-theme-toggle" id="theme-toggle" onclick="toggleStudentTheme()">
+          <span id="theme-icon">🌙</span> <span id="theme-label">Dark</span>
         </button>
+        <button class="btn btn-danger btn-sm" onclick="openStudentResetModal()">🔄 Reset</button>
       </div>
+    </header>
 
-      <!-- Summary Statistics Indicators -->
-      <div class="dash-stats-grid">
-        <div class="dash-stat-box">
-          <div class="stat-icon">📝</div>
-          <div class="stat-val" id="dash-stat-answered">0/20</div>
-          <div class="stat-label">Questions Answered</div>
-        </div>
-        <div class="dash-stat-box">
-          <div class="stat-icon">✍️</div>
-          <div class="stat-val" id="dash-stat-reasons">0/20</div>
-          <div class="stat-label">Reasonings Written</div>
-        </div>
-        <div class="dash-stat-box">
-          <div class="stat-icon">🎯</div>
-          <div class="stat-val" id="dash-stat-progress">0%</div>
-          <div class="stat-label">Overall Progress</div>
-        </div>
-      </div>
+    <!-- ==========================================
+         MAIN VIEWS
+    ========================================== -->
+    <main class="main-view">
 
-      <!-- Reading Passages List -->
-      <div class="section-heading">
-        <span>📖 Reading Passages & Exercises</span>
-      </div>
-      <div class="passages-grid" id="dashboard-passages-list">
-        <!-- Injected via JavaScript -->
-      </div>
-    </section>
-
-    <!-- ======================================================================
-         MODUL 2: WORKSHEET & STUDENT REASONING (HOTS)
-         ====================================================================== -->
-    <section id="view-worksheet" class="view-section">
-      <!-- Mobile Segmented Switcher (Visible on Mobile) -->
-      <div class="segmented-control">
-        <button class="segmented-btn" id="btn-seg-read" onclick="setMobileWorksheetTab('read')">
-          📖 Read Passage
-        </button>
-        <button class="segmented-btn active" id="btn-seg-quiz" onclick="setMobileWorksheetTab('quiz')">
-          ✍️ Questions & Reasons
-        </button>
-      </div>
-
-      <!-- Horizontal Scrollable Question Number Pills Bar (1 - 20) -->
-      <div class="question-pills-bar" id="question-pills-bar">
-        <!-- Injected via JavaScript -->
-      </div>
-
-      <!-- Split Workspace Container -->
-      <div class="workspace-container" id="worksheet-split-area" data-mobile-tab="quiz">
-        <!-- Left Panel: Reading Passage -->
-        <div class="reading-panel">
-          <div class="reading-toolbar">
-            <div class="reading-controls-group">
-              <span style="font-size: 0.78rem; font-weight: 800; color: var(--text-muted);">FONT:</span>
-              <button class="tool-btn" onclick="setFontSize('sm')">A-</button>
-              <button class="tool-btn" onclick="setFontSize('md')">Default</button>
-              <button class="tool-btn" onclick="setFontSize('lg')">A+</button>
-              <button class="tool-btn" onclick="setFontFamily('serif')">Serif</button>
-              <button class="tool-btn" onclick="setFontFamily('sans')">Sans</button>
-            </div>
+      <!-- 1. STUDENT DASHBOARD VIEW -->
+      <section id="view-dashboard" class="view-section active">
+        
+        <!-- Student Identity Form Card -->
+        <div class="student-id-card">
+          <div class="student-input-group">
+            <label class="student-input-label">Student Full Name:</label>
+            <input type="text" id="input-student-name" class="student-input-field" placeholder="Type your full name..." onchange="saveStudentProfile()">
           </div>
-
-          <!-- Audio TTS Toolbar -->
-          <div class="tts-player-bar">
-            <div class="tts-status">
-              <span id="tts-status-text">TTS Audio Reader</span>
-            </div>
-            <div class="tts-btns">
-              <button class="btn-tts" id="btn-tts-play" onclick="speakPassage()">🔊 Play Passage</button>
-            </div>
+          <div class="student-input-group">
+            <label class="student-input-label">Class / Group:</label>
+            <input type="text" id="input-student-class" class="student-input-field" placeholder="e.g., XII-1 / Group A..." onchange="saveStudentProfile()">
           </div>
-
-          <div class="reading-meta-header">
-            <h2 class="reading-title" id="reading-text-title">Reading Passage</h2>
-            <p class="reading-citation" id="reading-text-citation">Source & Genre</p>
+          <div class="student-input-group">
+            <label class="student-input-label">School / Institution:</label>
+            <input type="text" id="input-student-school" class="student-input-field" value="SMA Plus PGRI Cibinong" onchange="saveStudentProfile()">
           </div>
-
-          <!-- Paragraphs Content -->
-          <div class="passage-content font-serif size-md" id="reading-passage-body">
-            <!-- Injected via JavaScript -->
+          <div class="student-input-group">
+            <label class="student-input-label">Teacher / Advisor:</label>
+            <input type="text" id="input-student-teacher" class="student-input-field" value="Muhammad Falahaen Jiddan, M.Pd. Gr." onchange="saveStudentProfile()">
           </div>
         </div>
 
-        <!-- Right Panel: Questions & Reasoning -->
-        <div class="quiz-panel">
-          <div class="question-card">
-            <div class="q-header">
-              <span class="q-number-title" id="q-number-display">Question 1 of 20</span>
-              <span class="q-indicator-tag" id="q-indicator-display">Indicator Type</span>
-            </div>
+        <!-- Student Hero Banner -->
+        <div class="dashboard-hero-banner" style="background: linear-gradient(135deg, #065f46, #0f172a);">
+          <div>
+            <span class="badge badge-amber" style="margin-bottom: 8px;">INTERACTIVE WORKSHEET & CRITICAL REASONING</span>
+            <div class="dash-banner-title">LATIHAN TKA BAHASA INGGRIS SMA 2026 NARRATIVE TEXT</div>
+            <p class="dash-banner-subtitle">
+              Select a narrative passage to read and answer TKA questions. <strong>Write your textual evidence and logical reasoning</strong> for every question to develop higher-order thinking skills (HOTS).
+            </p>
+          </div>
+          <div>
+            <button class="btn btn-primary btn-lg" style="background: white; color: #065f46;" onclick="openStudentWorkspace(1)">
+              🚀 Start / Resume Worksheet →
+            </button>
+          </div>
+        </div>
 
-            <div class="q-body-text" id="q-body-display">
-              <!-- Question Text -->
-            </div>
-
-            <!-- Options Container (MC / MCMA / Categorization) -->
-            <div id="q-options-container">
-              <!-- Injected via JavaScript -->
-            </div>
-
-            <!-- Mandatory Reasoning Box (HOTS) -->
-            <div class="reasoning-box-wrapper">
-              <div class="reasoning-header">
-                <span class="reasoning-title">✍️ Why did you choose this answer? (Reasoning & Text Evidence)</span>
-                <span class="char-counter" id="q-reason-char-count">0 chars</span>
+        <!-- Quick Hub Cards -->
+        <div class="dash-hub-grid">
+          <div class="dash-hub-card" onclick="setStudentView('vocab_lab')">
+            <div class="hub-card-left">
+              <div class="hub-icon-box" style="background: #dcfce7; color: #059669;">📚</div>
+              <div>
+                <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-main); margin-bottom: 4px;">Vocabulary Lab</h3>
+                <p style="font-size: 0.9rem; color: var(--text-muted);">60 Essential words, Audio Pronunciation, 3D Flip Cards & Matching Game.</p>
               </div>
-              <p class="reasoning-helper-text">
-                Cite specific paragraph numbers (e.g. ¶ P2, ¶ P4) or key sentences that substantiate your choice.
-              </p>
-              <textarea
-                id="q-student-reason"
-                class="student-reason-textarea"
-                placeholder="Type your critical reasoning and textual evidence here..."
-                oninput="onReasonInput(event)"
-              ></textarea>
             </div>
+            <span class="btn btn-outline btn-sm">Open Lab →</span>
           </div>
 
-          <!-- Footer Navigation -->
-          <div class="worksheet-footer-nav">
-            <button class="btn-q-nav" id="btn-q-prev" onclick="selectQuestionIndex(AppState.currentQuestionIndex - 1)">
-              ◀ Previous
-            </button>
-            <button class="btn-q-nav primary" id="btn-q-next" onclick="selectQuestionIndex(AppState.currentQuestionIndex + 1)">
-              <span>Next Question</span> ➔
-            </button>
+          <div class="dash-hub-card" onclick="setStudentView('tka_strategy')">
+            <div class="hub-card-left">
+              <div class="hub-icon-box" style="background: var(--accent-amber-light); color: var(--accent-amber);">🎯</div>
+              <div>
+                <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-main); margin-bottom: 4px;">TKA Strategy Guide</h3>
+                <p style="font-size: 0.9rem; color: var(--text-muted);">12 4-Pillar Formulas & systematic methods for Narrative Text.</p>
+              </div>
+            </div>
+            <span class="btn btn-outline btn-sm">Open Strategy →</span>
           </div>
         </div>
-      </div>
 
-      <!-- Floating Action Button "👀 Peek Passage" (Mobile) -->
-      <button class="btn-fab-peek" id="btn-fab-peek" onclick="openPeekPassage()">
-        <span>👀 Peek Passage</span>
-      </button>
-    </section>
-
-    <!-- ======================================================================
-         MODUL 3: VOCABULARY / CONCEPT LAB (4 INTERACTIVE MODES)
-         ====================================================================== -->
-    <section id="view-vocab" class="view-section">
-      <div class="section-heading">
-        <span>🔤 Vocabulary & Concept Lab</span>
-      </div>
-
-      <!-- Filter Pills Bar -->
-      <div class="filter-pills-bar">
-        <button class="filter-pill-btn active" data-filter="all" onclick="setVocabFilter('all')">All Passages</button>
-        <button class="filter-pill-btn" data-filter="1" onclick="setVocabFilter('1')">Text 1 (Fable 1)</button>
-        <button class="filter-pill-btn" data-filter="2" onclick="setVocabFilter('2')">Text 2 (Infographic)</button>
-        <button class="filter-pill-btn" data-filter="3" onclick="setVocabFilter('3')">Text 3 (Fable 2)</button>
-        <button class="filter-pill-btn" data-filter="4" onclick="setVocabFilter('4')">Text 4 (Descriptive)</button>
-      </div>
-
-      <!-- 4 Activity Mode Tabs -->
-      <div class="vocab-mode-tabs">
-        <button class="vocab-mode-btn active" data-act="flipcard" onclick="setVocabActivity('flipcard')">🎴 Flip Cards</button>
-        <button class="vocab-mode-btn" data-act="match" onclick="setVocabActivity('match')">🧩 Match Words</button>
-        <button class="vocab-mode-btn" data-act="context" onclick="setVocabActivity('context')">💡 Context Quiz</button>
-        <button class="vocab-mode-btn" data-act="table" onclick="setVocabActivity('table')">📋 Word Master</button>
-      </div>
-
-      <!-- Mode 1: 3D Flip Card Container -->
-      <div id="vocab-mode-flipcard">
-        <div class="flipcard-container">
-          <div class="flipcard-card" id="flipcard-item" onclick="flipCurrentCard()">
-            <!-- Injected via JavaScript -->
-          </div>
-          <div class="flip-controls">
-            <button class="tool-btn" onclick="prevFlipCard()">◀ Prev</button>
-            <span id="flipcard-counter" style="font-weight: 800; font-size: 0.85rem;">Card 1 of 10</span>
-            <button class="tool-btn" onclick="nextFlipCard()">Next ▶</button>
-            <button class="tool-btn" onclick="shuffleFlipCards()">🔀 Shuffle</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Mode 2: Match Words Game Container -->
-      <div id="vocab-mode-match" style="display: none;">
-        <div class="match-game-container">
-          <div class="match-game-header">
-            <span id="match-game-score" style="font-weight: 800; color: var(--academic-blue);">Matched: 0 / 6</span>
-            <button class="tool-btn" onclick="resetMatchGame()">🔄 New Shuffle</button>
-          </div>
-          <div class="match-grid-cols">
-            <div class="match-col" id="match-col-left">
-              <!-- English Words -->
+        <!-- Stats Overview -->
+        <div class="overview-stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon" style="background: #dcfce7; color: #059669;">📝</div>
+            <div>
+              <div class="stat-val" id="student-stat-answered">0/25</div>
+              <div class="stat-label">Questions Answered</div>
             </div>
-            <div class="match-col" id="match-col-right">
-              <!-- Indonesian Meanings -->
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background: var(--accent-cyan-light); color: var(--academic-blue);">✍️</div>
+            <div>
+              <div class="stat-val" id="student-stat-reasoned">0/25</div>
+              <div class="stat-label">Reasoning Provided</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background: var(--accent-purple-light); color: var(--accent-purple);">📊</div>
+            <div>
+              <div class="stat-val" id="student-stat-progress">0%</div>
+              <div class="stat-label">Overall Progress</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">📖</div>
+            <div>
+              <div class="stat-val">4 Texts</div>
+              <div class="stat-label">Narrative Passages</div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Mode 3: Context Quiz Container -->
-      <div id="vocab-mode-context" style="display: none;">
-        <div id="context-quiz-box">
-          <!-- Injected via JavaScript -->
+        <!-- 4 Text Cards Grid -->
+        <h3 style="font-size: 1.3rem; font-weight: 900; color: var(--text-main); margin: 24px 0 16px 0;">📚 Narrative Reading Passages & Exercises:</h3>
+        <div class="text-cards-grid" id="student-dashboard-cards"></div>
+      </section>
+
+      <!-- 2. STUDENT WORKSPACE -->
+      <section id="view-student_workspace" class="view-section">
+        
+        <!-- Top Toolbar -->
+        <div class="workspace-top-bar">
+          <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <button class="btn btn-secondary btn-sm" onclick="setStudentView('dashboard')">← Dashboard</button>
+            <div id="student-ws-title" style="font-size: 1.15rem; font-weight: 800; color: var(--text-main);"></div>
+          </div>
+
+          <div class="font-size-control-group">
+            <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-right: 4px;">Typography:</span>
+            <button class="btn-font-ctrl" onclick="changeStudentFontSize(-1)">A-</button>
+            <button class="btn-font-ctrl" onclick="changeStudentFontSize(0)">Default</button>
+            <button class="btn-font-ctrl" onclick="changeStudentFontSize(1)">A+</button>
+            <button class="btn-font-ctrl" onclick="toggleStudentFontFamily()" style="margin-left: 6px;">Font: <span id="student-font-label">Serif</span></button>
+          </div>
         </div>
-      </div>
 
-      <!-- Mode 4: Word Master Table Container -->
-      <div id="vocab-mode-table" style="display: none;">
-        <input
-          type="text"
-          id="vocab-table-search"
-          class="word-search-input"
-          placeholder="🔍 Instant search vocabulary, pronunciation, or meaning..."
-          oninput="filterVocabTable()"
-        >
-        <div class="vocab-table-container">
-          <table class="vocab-table">
-            <thead>
-              <tr>
-                <th>Word & Phonetic</th>
-                <th>Part of Speech</th>
-                <th>Indonesian Meaning</th>
-                <th>Context / Example</th>
-              </tr>
-            </thead>
-            <tbody id="vocab-table-body">
-              <!-- Injected via JavaScript -->
-            </tbody>
-          </table>
+        <!-- Mobile View Toggle -->
+        <div class="mobile-tab-switch">
+          <button class="mobile-switch-btn active" id="btn-mobile-read" onclick="setMobileViewTab('read')">📖 1. Read Passage</button>
+          <button class="mobile-switch-btn" id="btn-mobile-quiz" onclick="setMobileViewTab('quiz')">✍️ 2. Questions & Reasons</button>
         </div>
-      </div>
-    </section>
 
-    <!-- ======================================================================
-         MODUL 4: STRATEGY GUIDE (PANDUAN STRATEGI HOTS — 4 PILAR)
-         ====================================================================== -->
-    <section id="view-strategy" class="view-section">
-      <div class="section-heading">
-        <span>⚡ 4-Pillar HOTS Strategy Guides</span>
-      </div>
-      <p style="color: var(--text-secondary); margin-bottom: 16px; font-size: 0.92rem;">
-        Panduan sistematis 4 pilar (Formula Emas, Ciri Pertanyaan, Langkah Sistematis, dan Waspada Pengecoh) untuk menuntun penalaran logis pada setiap indikator soal TKA 2025.
-      </p>
+        <!-- Split Grid Workspace -->
+        <div class="workspace-split-container">
+          
+          <!-- LEFT PANEL: READING TEXT -->
+          <div class="workspace-left-panel" id="student-reading-panel">
+            <h2 class="reading-article-title" id="student-reading-title"></h2>
+            <div class="reading-citation" id="student-reading-citation"></div>
+            <div id="student-reading-content"></div>
+          </div>
 
-      <div class="strategy-accordion-container" id="strategy-accordion-list">
-        <!-- Injected via JavaScript -->
-      </div>
-    </section>
+          <!-- RIGHT PANEL: QUESTIONS & REASONING -->
+          <div class="workspace-right-panel" id="student-practice-panel">
+            <div class="practice-header-bar">
+              <span style="font-weight: 800; color: var(--text-main); font-size: 1.05rem;">Select Question Number:</span>
+              <div class="practice-q-nav" id="student-practice-q-nav"></div>
+            </div>
 
-    <!-- ======================================================================
-         MODUL 5: ANSWER SHEET, EVALUASI OTOMATIS & ANALISIS PERFORMA
-         ====================================================================== -->
-    <section id="view-results" class="view-section">
-      <!-- Performance Score Hero -->
-      <div class="results-hero-card">
-        <div class="score-display-ring">
-          <span class="score-number" id="res-score-number">--</span>
-          <span class="score-total-denom">/ 100</span>
+            <div id="student-practice-canvas"></div>
+          </div>
+
         </div>
-        <h2 style="font-size: 1.3rem; font-weight: 900; color: #ffffff;">TKA Exam Performance Report</h2>
-        <div class="results-stats-row">
-          <span class="res-badge correct" id="res-count-correct">✅ 0 Correct</span>
-          <span class="res-badge incorrect" id="res-count-incorrect">❌ 0 Incorrect</span>
-          <span class="res-badge unanswered" id="res-count-unanswered">⏳ 20 Pending Evaluation</span>
-        </div>
-      </div>
+      </section>
 
-      <!-- Action Toolbar -->
-      <div class="results-actions-bar">
-        <button class="btn-action-sheet wa" onclick="shareToWhatsApp()">
-          <span>📲 Send to Teacher (WhatsApp)</span>
-        </button>
-        <button class="btn-action-sheet print" onclick="printResults()">
-          <span>🖨️ Print / Save PDF</span>
-        </button>
-        <button class="btn-action-sheet copy" onclick="copySummaryToClipboard()">
-          <span>📋 Copy Summary</span>
-        </button>
-        <button class="btn-action-sheet reset" onclick="openResetModal()">
-          <span>🔄 Reset Worksheet</span>
-        </button>
-      </div>
+      <!-- 3. VOCABULARY LAB (STUDENT VIEW) -->
+      <section id="view-vocab_lab" class="view-section">
+        <div class="global-vocab-container">
+          <div style="background: var(--bg-card); padding: 24px 30px; border-radius: 14px; border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+            <div>
+              <h2 style="font-size: 1.6rem; font-weight: 900; color: var(--text-main); margin-bottom: 4px;">📚 Vocabulary & Concept Lab</h2>
+              <p style="font-size: 0.95rem; color: var(--text-muted);">4 Interactive Modes: 3D Flip Cards, Match Words Game, Context Quiz, and Live Search Master Table.</p>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="setStudentView('dashboard')">← Dashboard</button>
+          </div>
 
-      <!-- Self-Assessment Guidance Card -->
-      <div class="self-eval-instruction-card">
-        <div class="instruction-header">
-          <span class="instruction-icon">📋</span>
-          <span class="instruction-title">Self-Assessment Instructions</span>
+          <!-- Text Filter -->
+          <div class="vocab-filter-pills">
+            <button class="vocab-filter-pill active" data-textfilter="all" onclick="filterStudentVocab('all')">All Passages (60 Words)</button>
+            <button class="vocab-filter-pill" data-textfilter="1" onclick="filterStudentVocab(1)">Text 1: Naka Cave (15)</button>
+            <button class="vocab-filter-pill" data-textfilter="2" onclick="filterStudentVocab(2)">Text 2: Miller's Daughter (15)</button>
+            <button class="vocab-filter-pill" data-textfilter="3" onclick="filterStudentVocab(3)">Text 3: Nightingale & Owl (15)</button>
+            <button class="vocab-filter-pill" data-textfilter="4" onclick="filterStudentVocab(4)">Text 4: Descent of Inanna (15)</button>
+          </div>
+
+          <!-- Activity Nav -->
+          <div class="vocab-activity-nav">
+            <button class="vocab-mode-btn active" data-mode="flipcard" onclick="setStudentVocabActivity('flipcard')">🎴 1. 3D Flip Cards</button>
+            <button class="vocab-mode-btn" data-mode="matching" onclick="setStudentVocabActivity('matching')">🧩 2. Match Words Game</button>
+            <button class="vocab-mode-btn" data-mode="context" onclick="setStudentVocabActivity('context')">💡 3. Context Challenge</button>
+            <button class="vocab-mode-btn" data-mode="list" onclick="setStudentVocabActivity('list')">📋 4. Word Master Table</button>
+          </div>
+
+          <div id="student-vocab-content-area"></div>
         </div>
-        <p class="instruction-body">
-          Please review your submitted answers and written reasonings below. Verify each question based on classroom discussion or teacher guidance, then independently mark each question as either <strong>Correct (Benar)</strong> or <strong>Incorrect (Salah)</strong> to calculate your final score.
+      </section>
+
+      <!-- 4. TKA STRATEGY (STUDENT VIEW) -->
+      <section id="view-tka_strategy" class="view-section">
+        <div class="strategy-container">
+          <div style="background: var(--bg-card); padding: 24px 30px; border-radius: 14px; border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+            <div>
+              <h2 style="font-size: 1.6rem; font-weight: 900; color: var(--text-main); margin-bottom: 4px;">🎯 TKA Strategy Guide (4 HOTS Pillars)</h2>
+              <p style="font-size: 0.95rem; color: var(--text-muted);">12 Golden Formulas, Question Stems, Systematic Steps, and Distractor Trap Analyses.</p>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="setStudentView('dashboard')">← Dashboard</button>
+          </div>
+
+          <div class="strategy-grid" id="student-strategy-cards-container"></div>
+        </div>
+      </section>
+
+      <!-- 5. WORKSHEET SUMMARY & CHECK (STUDENT VIEW) -->
+      <section id="view-worksheet_summary" class="view-section">
+        <div id="student-summary-container"></div>
+      </section>
+
+    </main>
+
+    <!-- ==========================================
+         FIXED BOTTOM NAVIGATION BAR (TOUCH UI)
+    ========================================== -->
+    <nav class="mobile-bottom-nav">
+      <div class="bottom-nav-item active" data-view="dashboard" onclick="setStudentView('dashboard')">
+        <span class="nav-icon">📊</span>
+        <span>Dashboard</span>
+      </div>
+      <div class="bottom-nav-item" data-view="student_workspace" onclick="setStudentView('student_workspace')">
+        <span class="nav-icon">✍️</span>
+        <span>Worksheet</span>
+      </div>
+      <div class="bottom-nav-item" data-view="vocab_lab" onclick="setStudentView('vocab_lab')">
+        <span class="nav-icon">📚</span>
+        <span>Vocab Lab</span>
+      </div>
+      <div class="bottom-nav-item" data-view="tka_strategy" onclick="setStudentView('tka_strategy')">
+        <span class="nav-icon">🎯</span>
+        <span>Strategy</span>
+      </div>
+      <div class="bottom-nav-item" data-view="worksheet_summary" onclick="setStudentView('worksheet_summary')">
+        <span class="nav-icon">📋</span>
+        <span>Answer Sheet</span>
+      </div>
+    </nav>
+
+    <!-- Floating Action Button for Peek Passage on Mobile -->
+    <button class="btn-floating-peek" onclick="openPeekModal()" title="Peek Reading Passage">
+      <span>👀 Peek Passage</span>
+    </button>
+
+    <!-- Bottom Sheet Modal Drawer for Peek Passage -->
+    <div class="bottom-sheet-overlay" id="peek-sheet-overlay">
+      <div class="bottom-sheet-drawer">
+        <div class="bottom-sheet-header">
+          <h3 id="peek-sheet-title" style="font-size: 1.15rem; font-weight: 800; color: var(--text-main);"></h3>
+          <button class="btn btn-secondary btn-sm" onclick="closePeekModal()">✕ Close</button>
+        </div>
+        <div class="bottom-sheet-body" id="peek-sheet-body"></div>
+      </div>
+    </div>
+
+    <!-- Reset Confirmation Modal -->
+    <div class="modal-overlay" id="student-reset-modal">
+      <div class="modal-content">
+        <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--accent-red); margin-bottom: 12px;">⚠️ Reset Worksheet?</h3>
+        <p style="font-size: 0.95rem; color: var(--text-secondary); margin-bottom: 24px; line-height: 1.6;">
+          This action will permanently clear all your selected answers and written reasoning. Are you sure you want to reset?
         </p>
-      </div>
-
-      <!-- Comprehensive Question Review (1–20) -->
-      <div class="section-heading">
-        <span>📑 Student Answers & Self-Assessment</span>
-      </div>
-      <div class="review-cards-list" id="results-review-list">
-        <!-- Injected via JavaScript -->
-      </div>
-    </section>
-
-  </main>
-
-  <!-- ========================================================================
-       BOTTOM NAVIGATION BAR (FIXED ON SCREEN BOTTOM)
-       ======================================================================== -->
-  <nav class="bottom-nav">
-    <button class="bottom-nav-item active" data-view="dashboard" onclick="setView('dashboard')">
-      <span class="nav-icon">🏠</span>
-      <span>Dashboard</span>
-    </button>
-    <button class="bottom-nav-item" data-view="worksheet" onclick="setView('worksheet')">
-      <span class="nav-icon">✍️</span>
-      <span>Worksheet</span>
-    </button>
-    <button class="bottom-nav-item" data-view="vocab" onclick="setView('vocab')">
-      <span class="nav-icon">🔤</span>
-      <span>Vocab Lab</span>
-    </button>
-    <button class="bottom-nav-item" data-view="strategy" onclick="setView('strategy')">
-      <span class="nav-icon">⚡</span>
-      <span>Strategies</span>
-    </button>
-    <button class="bottom-nav-item" data-view="results" onclick="setView('results')">
-      <span class="nav-icon">📊</span>
-      <span>Results</span>
-    </button>
-  </nav>
-
-  <!-- ========================================================================
-       PEEK PASSAGE BOTTOM SHEET MODAL (MOBILE)
-       ======================================================================== -->
-  <div class="bottom-sheet-overlay" id="peek-sheet-overlay" onclick="closePeekPassage()">
-    <div class="bottom-sheet-drawer" onclick="event.stopPropagation()">
-      <div class="bottom-sheet-header">
-        <h3 class="bottom-sheet-title" id="peek-sheet-title">📖 Reading Passage</h3>
-        <button class="btn-close-sheet" onclick="closePeekPassage()">✕</button>
-      </div>
-      <div class="bottom-sheet-body" id="peek-sheet-body">
-        <!-- Injected via JavaScript -->
+        <div style="display: flex; justify-content: flex-end; gap: 12px;">
+          <button class="btn btn-secondary" onclick="closeStudentModal('student-reset-modal')">Cancel</button>
+          <button class="btn btn-danger" onclick="confirmStudentReset()">Yes, Reset Worksheet</button>
+        </div>
       </div>
     </div>
+
+    <!-- Toast Notification -->
+    <div class="toast-container" id="toast-container"></div>
+
   </div>
 
-  <!-- ========================================================================
-       RESET CONFIRMATION MODAL
-       ======================================================================== -->
-  <div class="modal-overlay" id="reset-confirm-modal" onclick="closeResetModal()">
-    <div class="modal-content" onclick="event.stopPropagation()">
-      <h3 style="font-size: 1.2rem; font-weight: 900; color: var(--accent-rose);">⚠️ Reset Worksheet Answers?</h3>
-      <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.5;">
-        This will clear all your answers and written reasonings for questions 1 to 20. Your student profile will remain saved. Are you sure you want to proceed?
-      </p>
-      <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 10px;">
-        <button class="tool-btn" onclick="closeResetModal()">Cancel</button>
-        <button class="btn-q-nav primary" style="background: var(--accent-rose); border-color: var(--accent-rose);" onclick="confirmResetWorksheet()">
-          Yes, Reset All
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Toast Notification Container -->
-  <div class="toast-container" id="toast-container"></div>
-
-</div>
-
-<!-- Data & Application Scripts (100% Standalone, Dependency-Free) -->
-<script src="data.js"></script>
-<script src="student.js"></script>
+  <!-- Scripts -->
+  <script src="data.js"></script>
+  <script src="student.js"></script>
 </body>
 </html>
